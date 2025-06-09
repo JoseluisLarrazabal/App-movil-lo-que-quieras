@@ -40,6 +40,12 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Importar rutas
+const authRoutes = require('./routes/auth');
+
+// Rutas
+app.use('/api/auth', authRoutes);
+
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
@@ -88,8 +94,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Importar rutas (las crearemos después)
-// app.use('/api/auth', require('./routes/auth'));
 // app.use('/api/users', require('./routes/users'));
 // app.use('/api/services', require('./routes/services'));
 // app.use('/api/categories', require('./routes/categories'));
