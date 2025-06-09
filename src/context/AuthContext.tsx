@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useState, useEffect, type ReactNode } from "react"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import api from "../services/api"
 
 interface User {
   id: string
@@ -60,47 +61,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true)
 
-      // Simulate API call - In real app, this would be your backend
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Hacer request real al backend
+      const response = await api.post('/auth/login', {
+        email,
+        password
+      })
 
-      // Mock user data based on email
-      let mockUser: User
-      if (email === "admin@test.com") {
-        mockUser = {
-          id: "1",
-          name: "Administrador",
-          email: "admin@test.com",
-          role: "admin",
-          avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-        }
-      } else if (email === "provider@test.com") {
-        mockUser = {
-          id: "2",
-          name: "Juan Proveedor",
-          email: "provider@test.com",
-          role: "provider",
-          avatar: "https://randomuser.me/api/portraits/men/2.jpg",
-        }
-      } else {
-        mockUser = {
-          id: "3",
-          name: "María Usuario",
-          email: "user@test.com",
-          role: "user",
-          avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-        }
-      }
+      const { user, tokens } = response.data
 
-      const mockToken = "mock-jwt-token"
+      // Guardar tokens y usuario
+      await AsyncStorage.setItem("@LoQueQuieras:user", JSON.stringify(user))
+      await AsyncStorage.setItem("@LoQueQuieras:token", tokens.accessToken)
+      await AsyncStorage.setItem("@LoQueQuieras:refreshToken", tokens.refreshToken)
 
-      await AsyncStorage.setItem("@LoQueQuieras:user", JSON.stringify(mockUser))
-      await AsyncStorage.setItem("@LoQueQuieras:token", mockToken)
-
-      setCurrentUser(mockUser)
-      setUserRole(mockUser.role)
-    } catch (error) {
+      setCurrentUser(user)
+      setUserRole(user.role)
+    } catch (error: any) {
       console.log("Error signing in", error)
-      throw error
+      
+      // Manejar errores específicos
+      if (error.response?.status === 401) {
+        throw new Error("Email o contraseña incorrectos")
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message)
+      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network')) {
+        throw new Error("Error de conexión. Verifica tu internet.")
+      } else {
+        throw new Error("Error al iniciar sesión. Intenta nuevamente.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -110,27 +98,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true)
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const newUser: User = {
-        id: Date.now().toString(),
+      // Hacer request real al backend
+      const response = await api.post('/auth/register', {
         name,
         email,
-        role,
-        avatar: `https://randomuser.me/api/portraits/${role === "user" ? "women" : "men"}/${Math.floor(Math.random() * 50)}.jpg`,
-      }
+        password,
+        role
+      })
 
-      const mockToken = "mock-jwt-token"
+      const { user, tokens } = response.data
 
-      await AsyncStorage.setItem("@LoQueQuieras:user", JSON.stringify(newUser))
-      await AsyncStorage.setItem("@LoQueQuieras:token", mockToken)
+      // Guardar tokens y usuario
+      await AsyncStorage.setItem("@LoQueQuieras:user", JSON.stringify(user))
+      await AsyncStorage.setItem("@LoQueQuieras:token", tokens.accessToken)
+      await AsyncStorage.setItem("@LoQueQuieras:refreshToken", tokens.refreshToken)
 
-      setCurrentUser(newUser)
-      setUserRole(newUser.role)
-    } catch (error) {
+      setCurrentUser(user)
+      setUserRole(user.role)
+    } catch (error: any) {
       console.log("Error signing up", error)
-      throw error
+      
+      // Manejar errores específicos
+      if (error.response?.status === 409) {
+        throw new Error("El email ya está registrado")
+      } else if (error.response?.data?.errors) {
+        throw new Error(error.response.data.errors[0])
+      } else if (error.response?.data?.message) {
+        throw new Error(error.response.data.message)
+      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network')) {
+        throw new Error("Error de conexión. Verifica tu internet.")
+      } else {
+        throw new Error("Error al crear la cuenta. Intenta nuevamente.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -139,8 +138,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       setIsLoading(true)
+      
+      // Opcional: notificar al backend del logout
+      try {
+        await api.post('/auth/logout')
+      } catch (error) {
+        console.log("Error notifying logout to server:", error)
+      }
+
       await AsyncStorage.removeItem("@LoQueQuieras:user")
       await AsyncStorage.removeItem("@LoQueQuieras:token")
+      await AsyncStorage.removeItem("@LoQueQuieras:refreshToken")
 
       setCurrentUser(null)
       setUserRole(null)
@@ -156,6 +164,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true)
 
       if (currentUser) {
+        // En el futuro, aquí harías un request al backend
+        // const response = await api.put('/users/profile', data)
+        
+        // Por ahora, solo actualizamos localmente
         const updatedUser = { ...currentUser, ...data }
         await AsyncStorage.setItem("@LoQueQuieras:user", JSON.stringify(updatedUser))
         setCurrentUser(updatedUser)
