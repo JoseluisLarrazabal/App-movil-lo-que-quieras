@@ -6,6 +6,15 @@ const http = require('http');
 const socketIo = require('socket.io');
 const rateLimit = require('express-rate-limit');
 
+// Agregar después de las importaciones existentes
+require('./models/User');
+require('./models/Category');
+require('./models/Service');
+require('./models/Booking');
+require('./models/Chat');
+
+// El resto del código permanece igual...
+
 // Cargar variables de entorno
 dotenv.config();
 
