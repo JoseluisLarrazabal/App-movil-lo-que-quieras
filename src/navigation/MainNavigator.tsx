@@ -17,6 +17,7 @@ import HomeScreen from "../screens/user/HomeScreen"
 import SearchScreen from "../screens/user/SearchScreen"
 import ProfileScreen from "../screens/user/ProfileScreen"
 import BookingsScreen from "../screens/user/BookingsScreen"
+import ProfessionalSearchScreen from "../screens/professional/ProfessionalSearchScreen"
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -50,6 +51,15 @@ function UserTabs() {
         options={{
           tabBarLabel: "Buscar",
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="magnify" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen 
+        name="Professionals" 
+        component={ProfessionalSearchScreen}
+        options={{
+          tabBarLabel: "Profesionales",
+          tabBarIcon: ({ color, size }) => 
+            <MaterialCommunityIcons name="account-hard-hat" size={size} color={color} />
         }}
       />
       <Tab.Screen
