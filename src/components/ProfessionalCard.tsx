@@ -3,13 +3,22 @@ import { StyleSheet, View, TouchableOpacity, Linking, Alert } from "react-native
 import { Card, Avatar, Text, Chip, Button } from "react-native-paper"
 import { theme } from "../theme"
 import type { Professional } from "../redux/slices/professionalsSlice"  // ✅ USAR el tipo correcto
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+// Definir el tipo para las rutas de navegación
+type RootStackParamList = {
+  ProfessionalDetail: { professionalId: string };
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProfessionalDetail'>;
 
 interface ProfessionalCardProps {
   professional: Professional  // ✅ CAMBIAR a Professional completo
-  onPress: () => void
 }
 
-export default function ProfessionalCard({ professional, onPress }: ProfessionalCardProps) {
+export default function ProfessionalCard({ professional }: ProfessionalCardProps) {
+  const navigation = useNavigation<NavigationProp>();
   
   // ✅ IMPLEMENTAR lógica de contacto real
   const handleContact = () => {
@@ -46,7 +55,7 @@ export default function ProfessionalCard({ professional, onPress }: Professional
   }
 
   return (
-    <TouchableOpacity onPress={onPress}>
+    <TouchableOpacity onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional.id })}>
       <Card style={styles.card}>
         <Card.Content>
           <View style={styles.header}>
@@ -101,7 +110,11 @@ export default function ProfessionalCard({ professional, onPress }: Professional
           </View>
 
           <View style={styles.actions}>
-            <Button mode="outlined" style={styles.actionButton} onPress={onPress}>
+            <Button 
+              mode="outlined" 
+              style={styles.actionButton} 
+              onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional.id })}
+            >
               Ver perfil
             </Button>
             <Button mode="contained" style={styles.actionButton} onPress={handleContact}>

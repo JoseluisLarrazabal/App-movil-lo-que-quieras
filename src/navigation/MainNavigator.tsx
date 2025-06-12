@@ -18,6 +18,8 @@ import SearchScreen from "../screens/user/SearchScreen"
 import ProfileScreen from "../screens/user/ProfileScreen"
 import BookingsScreen from "../screens/user/BookingsScreen"
 import ProfessionalSearchScreen from "../screens/professional/ProfessionalSearchScreen"
+import ProfessionalDetailScreen from "../screens/professional/ProfessionalDetailScreen"
+import CreateProfessionalProfileScreen from "../screens/professional/CreateProfessionalProfileScreen"
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -53,12 +55,12 @@ function UserTabs() {
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="magnify" size={size} color={color} />,
         }}
       />
-      <Tab.Screen 
-        name="Professionals" 
+      <Tab.Screen
+        name="Professionals"
         component={ProfessionalSearchScreen}
         options={{
           tabBarLabel: "Profesionales",
-          tabBarIcon: ({ color, size }) => 
+          tabBarIcon: ({ color, size }) =>
             <MaterialCommunityIcons name="account-hard-hat" size={size} color={color} />
         }}
       />
@@ -102,8 +104,12 @@ export default function MainNavigator() {
         // User Stack (simplified for this version)
         <Stack.Group>
           <Stack.Screen name="UserTabs" component={UserTabs} />
+          <Stack.Screen name="ProfessionalDetail" component={ProfessionalDetailScreen} />
+          <Stack.Screen name="CreateProfessionalProfile" component={CreateProfessionalProfileScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>
+
+
   )
 }

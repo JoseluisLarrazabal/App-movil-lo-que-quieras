@@ -7,13 +7,21 @@ import { useSelector, useDispatch } from "react-redux"
 import { Searchbar, Chip, SegmentedButtons, FAB, Text, Title } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootState } from "../../redux/store"
 import { setSearchResults, setFilters } from "../../redux/slices/professionalsSlice"
 import { theme } from "../../theme"
 import ProfessionalCard from "../../components/ProfessionalCard"
 
+type RootStackParamList = {
+  CreateProfessionalProfile: undefined;
+  ProfessionalDetail: { professionalId: string };
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function ProfessionalSearchScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<NavigationProp>()
   const dispatch = useDispatch()
   const { items: professionals, searchResults, filters } = useSelector((state: RootState) => state.professionals)
   
@@ -119,7 +127,7 @@ export default function ProfessionalSearchScreen() {
         data={searchResults}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <ProfessionalCard professional={item} onPress={() => {}} />
+          <ProfessionalCard professional={item} />
         )}
         contentContainerStyle={styles.professionalsList}
         showsVerticalScrollIndicator={false}
@@ -134,7 +142,7 @@ export default function ProfessionalSearchScreen() {
       <FAB
         icon="account-plus"
         style={styles.fab}
-        onPress={() => {}} 
+        onPress={() => navigation.navigate("CreateProfessionalProfile")} 
         label="Crear perfil profesional"
       />
     </SafeAreaView>

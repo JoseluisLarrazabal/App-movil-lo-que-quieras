@@ -29,7 +29,7 @@ export default function App() {
         <SafeAreaProvider>
           <NavigationContainer>
             <AuthProvider>
-              <StatusBar style="light" backgroundColor={theme.colors.primary} />
+              <StatusBar style="light" />
               <MainNavigator />
             </AuthProvider>
           </NavigationContainer>
