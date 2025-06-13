@@ -7,14 +7,17 @@ import { Text, Avatar, Button, Card, Title, Paragraph, Appbar, Searchbar } from 
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { AuthContext } from "../../context/AuthContext"
-import type { RootState } from "../../redux/store"
+import type { RootState, AppDispatch } from "../../redux/store"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
 import CategoryButton from "../../components/CategoryButton"
+import { fetchServices } from "../../redux/slices/servicesSlice"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
 
 export default function HomeScreen() {
-  const navigation = useNavigation()
-  const dispatch = useDispatch()
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+  const dispatch = useDispatch<AppDispatch>()
   const { currentUser } = useContext(AuthContext)
   const { items: categories } = useSelector((state: RootState) => state.categories)
   const { popularServices } = useSelector((state: RootState) => state.services)
@@ -22,6 +25,17 @@ export default function HomeScreen() {
   const navigateToSearch = () => {
     navigation.navigate("Search" as never)
   }
+
+  const handleCategoryPress = (category: any) => {
+    navigation.navigate("CategoryScreen", {
+      categoryId: category._id,
+      categoryName: category.name,
+    })
+  }
+
+  useEffect(() => {
+    dispatch(fetchServices())
+  }, [dispatch])
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,7 +159,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.categoriesContainer}
             renderItem={({ item }) => (
               <View style={styles.categoryItemWrapper}>
-                <CategoryButton category={item} onPress={() => {}} />
+                <CategoryButton category={item} onPress={() => handleCategoryPress(item)} />
               </View>
             )}
           />
@@ -161,7 +175,7 @@ export default function HomeScreen() {
             <Button 
               mode="text" 
               labelStyle={styles.sectionButtonLabel}
-              onPress={() => {}}
+              onPress={() => navigation.navigate("AllServicesScreen" as never)}
               icon="arrow-right"
             >
               Ver todos

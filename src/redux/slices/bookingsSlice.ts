@@ -1,4 +1,5 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import { createSlice, type PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
+import api from "../../services/api"
 
 export interface Booking {
   id: string
@@ -32,36 +33,76 @@ interface BookingsState {
   error: string | null
 }
 
-const mockBookings: Booking[] = [
+// Thunk para obtener reservas del usuario
+export const fetchUserBookings = createAsyncThunk<
+  Booking[],
+  string, // userId
+  { rejectValue: { message: string; data?: any } }
+>(
+  "bookings/fetchUserBookings",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/bookings/user/${userId}`)
+      return res.data.bookings
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al cargar reservas del usuario",
+        data: error.response?.data
+      })
+    }
+  }
+)
+
+// Thunk para obtener reservas del proveedor
+export const fetchProviderBookings = createAsyncThunk<
+  Booking[],
+  string, // providerId
+  { rejectValue: { message: string; data?: any } }
+>(
+  "bookings/fetchProviderBookings",
+  async (providerId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/bookings/provider/${providerId}`)
+      return res.data.bookings
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al cargar reservas del proveedor",
+        data: error.response?.data
+      })
+    }
+  }
+)
+
+// Thunk para crear una reserva
+export const createBooking = createAsyncThunk<
+  any, // Puedes tipar la respuesta si lo deseas
   {
-    id: "1",
-    serviceId: "1",
-    providerId: "1",
-    userId: "3",
-    date: "2024-01-15",
-    time: "14:00",
-    status: "confirmed",
-    price: 850,
-    notes: "Limpieza completa de 3 habitaciones",
-    service: {
-      title: "Limpieza profunda de hogar",
-      image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
-    },
-    provider: {
-      name: "María García",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    },
-    user: {
-      name: "María Usuario",
-      avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-    },
+    serviceId: string
+    scheduledDate: string
+    scheduledTime: string
+    notes?: string
+    address?: string
   },
-]
+  { rejectValue: { message: string; data?: any } }
+>(
+  "bookings/createBooking",
+  async (bookingData, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/bookings", bookingData)
+      return res.data.booking
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al crear reserva",
+        data: error.response?.data
+      })
+    }
+  }
+)
 
 const initialState: BookingsState = {
-  items: mockBookings,
-  userBookings: mockBookings,
-  providerBookings: mockBookings,
+  items: [],
+  userBookings: [],
+  providerBookings: [],
   status: "idle",
   error: null,
 }
@@ -87,6 +128,48 @@ const bookingsSlice = createSlice({
       state.providerBookings = action.payload
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUserBookings.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(fetchUserBookings.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        state.userBookings = action.payload
+        state.error = null
+      })
+      .addCase(fetchUserBookings.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+      .addCase(fetchProviderBookings.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(fetchProviderBookings.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        state.providerBookings = action.payload
+        state.error = null
+      })
+      .addCase(fetchProviderBookings.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+      .addCase(createBooking.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(createBooking.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        state.userBookings.unshift(action.payload)
+        state.error = null
+      })
+      .addCase(createBooking.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+  }
 })
 
 export const { addBooking, updateBookingStatus, setUserBookings, setProviderBookings } = bookingsSlice.actions

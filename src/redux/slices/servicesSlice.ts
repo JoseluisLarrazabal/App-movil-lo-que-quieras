@@ -1,4 +1,5 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import { createSlice, type PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
+import api from "../../services/api"
 
 export interface Service {
   id: string
@@ -33,73 +34,53 @@ interface ServicesState {
   error: string | null
 }
 
-const mockServices: Service[] = [
-  {
-    id: "1",
-    title: "Limpieza profunda de hogar",
-    description: "Servicio completo de limpieza para tu hogar, incluye todas las habitaciones",
-    price: 850,
-    rating: 4.8,
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
-    category: { id: "1", name: "Limpieza" },
-    provider: {
-      id: "1",
-      name: "María García",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-      rating: 4.9,
-    },
-    location: {
-      lat: -34.6037,
-      lng: -58.3816,
-      address: "Buenos Aires, Argentina",
-    },
-  },
-  {
-    id: "2",
-    title: "Reparación de tuberías",
-    description: "Solución rápida y eficiente para problemas de plomería",
-    price: 1200,
-    rating: 4.6,
-    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400",
-    category: { id: "2", name: "Plomería" },
-    provider: {
-      id: "2",
-      name: "Juan Pérez",
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-      rating: 4.7,
-    },
-    location: {
-      lat: -34.6037,
-      lng: -58.3816,
-      address: "Buenos Aires, Argentina",
-    },
-  },
-  {
-    id: "3",
-    title: "Instalación eléctrica",
-    description: "Instalación y reparación de sistemas eléctricos residenciales",
-    price: 950,
-    rating: 4.9,
-    image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400",
-    category: { id: "3", name: "Electricidad" },
-    provider: {
-      id: "3",
-      name: "Carlos López",
-      avatar: "https://randomuser.me/api/portraits/men/45.jpg",
-      rating: 4.8,
-    },
-    location: {
-      lat: -34.6037,
-      lng: -58.3816,
-      address: "Buenos Aires, Argentina",
-    },
-  },
-]
+// Thunk para obtener servicios reales
+export const fetchServices = createAsyncThunk<
+  Service[],
+  void,
+  { rejectValue: { message: string; data?: any } }
+>(
+  "services/fetchServices",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/services")
+      // Mapear los servicios para que coincidan con la interfaz del frontend
+      return res.data.services.map((s: any) => ({
+        id: s._id,
+        title: s.title,
+        description: s.description,
+        price: s.price,
+        rating: s.rating || 0,
+        image: s.images?.[0] || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
+        category: {
+          id: s.category?._id || s.category?.id || "",
+          name: s.category?.name || ""
+        },
+        provider: {
+          id: s.provider?._id || s.provider?.id || "",
+          name: s.provider?.name || "",
+          avatar: s.provider?.avatar || "https://randomuser.me/api/portraits/men/32.jpg",
+          rating: s.provider?.rating || 0
+        },
+        location: {
+          lat: s.location?.lat || 0,
+          lng: s.location?.lng || 0,
+          address: s.location?.address || ""
+        }
+      }))
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al cargar servicios",
+        data: error.response?.data
+      })
+    }
+  }
+)
 
 const initialState: ServicesState = {
-  items: mockServices,
-  popularServices: mockServices,
-  nearbyServices: mockServices,
+  items: [],
+  popularServices: [],
+  nearbyServices: [],
   selectedService: null,
   status: "idle",
   error: null,
@@ -125,6 +106,23 @@ const servicesSlice = createSlice({
       state.items = state.items.filter((service) => service.id !== action.payload)
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchServices.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(fetchServices.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        state.items = action.payload
+        state.popularServices = action.payload.slice(0, 4)
+        state.error = null
+      })
+      .addCase(fetchServices.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+  }
 })
 
 export const { setSelectedService, addService, updateService, deleteService } = servicesSlice.actions

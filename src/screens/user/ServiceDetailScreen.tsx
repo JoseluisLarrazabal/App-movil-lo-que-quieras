@@ -281,6 +281,17 @@ export default function ServiceDetailScreen() {
           </View>
         </Modal>
       </Portal>
+
+      {/* Botón Reservar */}
+      <View style={{ margin: 24 }}>
+        <Button
+          mode="contained"
+          style={{ borderRadius: 16, paddingVertical: 8 }}
+          onPress={() => navigation.navigate("CreateBookingScreen", { serviceId: selectedService.id })}
+        >
+          Reservar
+        </Button>
+      </View>
     </SafeAreaView>
   )
 }

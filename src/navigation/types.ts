@@ -14,6 +14,8 @@ export type RootStackParamList = {
     AddService: { serviceId?: string; mode?: "edit" | "add" };
     AllCategoriesScreen: undefined;
     CategoryScreen: { categoryId: string; categoryName: string };
+    CreateBookingScreen: { serviceId: string };
+    AllServicesScreen: undefined;
     // Agrega aquí otras screens y sus params
   };
 

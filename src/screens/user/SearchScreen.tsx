@@ -12,11 +12,12 @@ import { addSearch } from "../../redux/slices/searchHistorySlice"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
 import CategoryButton from "../../components/CategoryButton"
+import { fetchServices } from "../../redux/slices/servicesSlice"
 
 export default function SearchScreen() {
   const navigation = useNavigation()
   const dispatch = useDispatch<AppDispatch>()
-  const { items: services } = useSelector((state: RootState) => state.services)
+  const { items: services, status: servicesStatus } = useSelector((state: RootState) => state.services)
   const { items: categories, status: categoriesStatus } = useSelector((state: RootState) => state.categories)
   const { recentSearches } = useSelector((state: RootState) => state.searchHistory)
 
@@ -29,6 +30,12 @@ export default function SearchScreen() {
       dispatch(fetchCategories())
     }
   }, [dispatch, categoriesStatus])
+
+  useEffect(() => {
+    if (servicesStatus === "idle") {
+      dispatch(fetchServices())
+    }
+  }, [dispatch, servicesStatus])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)

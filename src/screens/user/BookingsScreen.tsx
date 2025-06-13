@@ -1,17 +1,36 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useContext, useCallback } from "react"
 import { useState } from "react"
-import { StyleSheet, View, FlatList } from "react-native"
-import { useSelector } from "react-redux"
+import { StyleSheet, View, FlatList, ActivityIndicator } from "react-native"
+import { useSelector, useDispatch } from "react-redux"
 import { Text, Card, Avatar, Button, Chip, SegmentedButtons, Title } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
-import type { RootState } from "../../redux/store"
+import type { RootState, AppDispatch } from "../../redux/store"
 import { theme } from "../../theme"
+import { AuthContext } from "../../context/AuthContext"
+import { fetchUserBookings } from "../../redux/slices/bookingsSlice"
 
 export default function BookingsScreen() {
-  const { userBookings } = useSelector((state: RootState) => state.bookings)
+  const dispatch = useDispatch<AppDispatch>()
+  const { currentUser } = useContext(AuthContext)
+  const { userBookings, status, error } = useSelector((state: RootState) => state.bookings)
   const [selectedTab, setSelectedTab] = useState("all")
+  const [refreshing, setRefreshing] = useState(false)
+
+  // Cargar reservas al montar
+  useEffect(() => {
+    if (currentUser?.id) {
+      dispatch(fetchUserBookings(currentUser.id))
+    }
+  }, [dispatch, currentUser?.id])
+
+  const onRefresh = useCallback(() => {
+    if (currentUser?.id) {
+      setRefreshing(true)
+      dispatch(fetchUserBookings(currentUser.id)).finally(() => setRefreshing(false))
+    }
+  }, [dispatch, currentUser?.id])
 
   const filteredBookings = userBookings.filter((booking) => {
     if (selectedTab === "all") return true
@@ -114,18 +133,35 @@ export default function BookingsScreen() {
         />
       </View>
 
-      <FlatList
-        data={filteredBookings}
-        keyExtractor={(item) => item.id}
-        renderItem={renderBookingItem}
-        contentContainerStyle={styles.bookingsList}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No tienes reservas en esta categoría</Text>
-          </View>
-        }
-      />
+      {status === "loading" && (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      )}
+      {status === "failed" && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || "Error al cargar reservas"}</Text>
+          <Button mode="outlined" onPress={onRefresh} style={{ marginTop: 12 }}>
+            Reintentar
+          </Button>
+        </View>
+      )}
+      {status !== "loading" && status !== "failed" && (
+        <FlatList
+          data={filteredBookings}
+          keyExtractor={(item) => item.id}
+          renderItem={renderBookingItem}
+          contentContainerStyle={styles.bookingsList}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No tienes reservas en esta categoría</Text>
+            </View>
+          }
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      )}
     </SafeAreaView>
   )
 }
@@ -222,5 +258,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.placeholder,
     textAlign: "center",
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
+  errorText: {
+    color: theme.colors.error,
+    marginBottom: 12,
   },
 })
