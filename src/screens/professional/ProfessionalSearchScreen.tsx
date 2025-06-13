@@ -20,6 +20,10 @@ type RootStackParamList = {
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+// Utilidad para normalizar texto (ignora tildes y mayúsculas)
+const normalize = (str: string) =>
+  str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 export default function ProfessionalSearchScreen() {
   const navigation = useNavigation<NavigationProp>()
   const dispatch = useDispatch()
@@ -38,34 +42,42 @@ export default function ProfessionalSearchScreen() {
   }, [searchQuery, filters.profession, availabilityFilter])
 
   const searchProfessionals = () => {
-    let filtered = professionals
+    let filtered = professionals;
 
-    if (searchQuery) {
-      filtered = filtered.filter(professional =>
-        professional.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        professional.profession.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        professional.specialties.some(specialty => 
-          specialty.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      )
-    }
-
-    if (filters.profession) {
-      filtered = filtered.filter(professional =>
-        professional.profession.toLowerCase().includes(filters.profession.toLowerCase())
-      )
-    }
-
+    // Filtro por disponibilidad
     if (availabilityFilter !== "all") {
-      filtered = filtered.filter(professional =>
-        professional.availability.type === availabilityFilter
-      )
+      filtered = filtered.filter(
+        professional => professional.availability.type === availabilityFilter
+      );
     }
 
-    filtered.sort((a, b) => b.rating - a.rating)
+    // Filtro por texto (prioridad)
+    if (searchQuery) {
+      const query = normalize(searchQuery);
+      filtered = filtered.filter(professional =>
+        normalize(professional.user.name).includes(query) ||
+        normalize(professional.profession).includes(query) ||
+        professional.specialties.some(specialty => normalize(specialty).includes(query))
+      );
+      // Si hay filtro de profesión, lo aplicamos también pero de forma tolerante
+      if (filters.profession) {
+        const profFilter = normalize(filters.profession);
+        filtered = filtered.filter(
+          professional => normalize(professional.profession) === profFilter
+        );
+      }
+    } else if (filters.profession) {
+      // Si no hay búsqueda por texto, pero sí filtro de profesión
+      const profFilter = normalize(filters.profession);
+      filtered = filtered.filter(
+        professional => normalize(professional.profession) === profFilter
+      );
+    }
 
-    dispatch(setSearchResults(filtered))
-  }
+    filtered.sort((a, b) => b.rating - a.rating);
+
+    dispatch(setSearchResults(filtered));
+  };
 
   const handleProfessionSelect = (profession: string) => {
     const newProfession = filters.profession === profession ? "" : profession
