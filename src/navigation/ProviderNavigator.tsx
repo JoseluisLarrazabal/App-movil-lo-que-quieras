@@ -13,6 +13,7 @@ const Tab = createBottomTabNavigator()
 export default function ProviderNavigator() {
   return (
     <Tab.Navigator
+      initialRouteName="ProviderHome"
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.placeholder,

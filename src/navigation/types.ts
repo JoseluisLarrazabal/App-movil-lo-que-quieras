@@ -19,8 +19,9 @@ export type RootStackParamList = {
     CreateBookingScreen: { serviceId: string };
     AllServicesScreen: undefined;
     ProfessionalDetail: { professionalId: string };
-    ProviderProfile: { providerId: string };
+    ProviderPublicProfile: { providerId: string };
     AddService: { serviceId?: string; mode?: "edit" | "add" };
+    ProviderBookings: undefined;
 };
 
 export type UserTabParamList = {

@@ -2,10 +2,14 @@ import { StyleSheet, View, ScrollView } from "react-native"
 import { Text, Card, Title, Paragraph, Button } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
 import { theme } from "../../theme"
 
+type ProviderHomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
+
 export default function ProviderHomeScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<ProviderHomeScreenNavigationProp>()
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,7 +44,7 @@ export default function ProviderHomeScreen() {
               <Button
                 mode="contained"
                 icon="plus"
-                onPress={() => navigation.navigate("AddService" as never)}
+                onPress={() => navigation.navigate("AddService", { mode: "add" })}
                 style={styles.actionButton}
               >
                 Nuevo servicio
@@ -48,7 +52,7 @@ export default function ProviderHomeScreen() {
               <Button
                 mode="outlined"
                 icon="calendar"
-                onPress={() => navigation.navigate("ProviderBookings" as never)}
+                onPress={() => navigation.navigate("ProviderBookings")}
                 style={styles.actionButton}
               >
                 Ver reservas

@@ -1,24 +1,22 @@
 // screens/professional/ProfessionalSearchScreen.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { StyleSheet, View, FlatList } from "react-native"
 import { useSelector, useDispatch } from "react-redux"
 import { Searchbar, Text, Chip, Title, SegmentedButtons } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs"
 import type { RootState, AppDispatch } from "../../redux/store"
-import { setSearchResults, setFilters, fetchProfessionals } from "../../redux/slices/professionalsSlice"
+import { setFilters, fetchProfessionals } from "../../redux/slices/professionalsSlice"
 import { theme } from "../../theme"
 import ProfessionalCard from "../../components/ProfessionalCard"
+import type { UserTabParamList, RootStackParamList } from "../../navigation/types"
 
-type RootStackParamList = {
-  CreateProfessionalProfile: undefined;
-  ProfessionalDetail: { professionalId: string };
+type NavigationProp = BottomTabNavigationProp<UserTabParamList, 'Professionals'> & {
+  navigate: (screen: keyof RootStackParamList, params?: any) => void;
 };
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Utilidad para normalizar texto (ignora tildes y mayúsculas)
 const normalize = (str: string) =>
@@ -27,7 +25,7 @@ const normalize = (str: string) =>
 export default function ProfessionalSearchScreen() {
   const navigation = useNavigation<NavigationProp>()
   const dispatch = useDispatch<AppDispatch>()
-  const { items: professionals, searchResults, filters } = useSelector((state: RootState) => state.professionals)
+  const { items: professionals, filters } = useSelector((state: RootState) => state.professionals)
   
   const [searchQuery, setSearchQuery] = useState("")
   const [availabilityFilter, setAvailabilityFilter] = useState("all")
@@ -42,16 +40,13 @@ export default function ProfessionalSearchScreen() {
     dispatch(fetchProfessionals())
   }, [dispatch])
 
-  useEffect(() => {
-    searchProfessionals()
-  }, [searchQuery, filters.profession, availabilityFilter, professionals])
-
-  const searchProfessionals = () => {
-    console.log("🔍 Searching professionals...")
+  // Usar useMemo para filtrar los profesionales
+  const filteredProfessionals = useMemo(() => {
+    console.log("🔍 Filtering professionals...")
     console.log("📊 Total professionals in state:", professionals.length)
     console.log("🔧 Current filters:", { searchQuery, profession: filters.profession, availabilityFilter })
     
-    let filtered = professionals;
+    let filtered = [...professionals];
 
     // Filtro por disponibilidad
     if (availabilityFilter !== "all") {
@@ -86,8 +81,8 @@ export default function ProfessionalSearchScreen() {
     filtered.sort((a, b) => b.rating - a.rating);
 
     console.log("✅ Filtered results:", filtered.length)
-    dispatch(setSearchResults(filtered));
-  };
+    return filtered;
+  }, [searchQuery, filters.profession, availabilityFilter, professionals]);
 
   const handleProfessionSelect = (profession: string) => {
     const newProfession = filters.profession === profession ? "" : profession
@@ -99,7 +94,7 @@ export default function ProfessionalSearchScreen() {
       <View style={styles.header}>
         <Title style={styles.headerTitle}>Buscar Profesionales</Title>
         <Text style={styles.headerSubtitle}>
-          {searchResults.length} profesionales disponibles
+          {filteredProfessionals.length} profesionales disponibles
         </Text>
       </View>
 
@@ -151,7 +146,7 @@ export default function ProfessionalSearchScreen() {
       </View>
 
       <FlatList
-        data={searchResults}
+        data={filteredProfessionals}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <ProfessionalCard professional={item} />

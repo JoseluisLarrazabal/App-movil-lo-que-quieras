@@ -4,14 +4,16 @@ import { Card, Avatar, Text, Chip, Button } from "react-native-paper"
 import { theme } from "../theme"
 import type { Professional } from "../redux/slices/professionalsSlice"
 import { useNavigation } from "@react-navigation/native";
+import type { CompositeNavigationProp } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { UserTabParamList } from "../navigation/types";
+import type { RootStackParamList } from "../navigation/types";
 
-// Definir el tipo para las rutas de navegación
-type RootStackParamList = {
-  ProfessionalDetail: { professionalId: string };
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProfessionalDetail'>;
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<UserTabParamList, 'Professionals'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 interface ProfessionalCardProps {
   professional: Professional

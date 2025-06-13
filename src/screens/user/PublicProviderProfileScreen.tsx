@@ -10,14 +10,14 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
 
-type ProviderProfileScreenNavigationProp = NativeStackNavigationProp<
+type ProviderPublicProfileScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'ProviderProfile'
+  'ProviderPublicProfile'
 >;
 
-export default function ProviderProfileScreen() {
+export default function ProviderPublicProfileScreen() {
   const route = useRoute()
-  const navigation = useNavigation<ProviderProfileScreenNavigationProp>()
+  const navigation = useNavigation<ProviderPublicProfileScreenNavigationProp>()
   const { providerId } = route.params as { providerId: string }
 
   // Mock provider data
@@ -474,4 +474,4 @@ const styles = StyleSheet.create({
   buttonContent: {
     height: 48,
   },
-})
+}) 

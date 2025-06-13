@@ -9,10 +9,14 @@ import { useNavigation } from "@react-navigation/native"
 import type { RootState } from "../../redux/store"
 import type { AppDispatch } from "../../redux/store"
 import { AuthContext } from "../../context/AuthContext"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
+
+type CreateProfessionalProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CreateProfessionalProfile'>
 
 export default function CreateProfessionalProfileScreen() {
   const dispatch = useDispatch<AppDispatch>()
-  const navigation = useNavigation()
+  const navigation = useNavigation<CreateProfessionalProfileScreenNavigationProp>()
   const { status, error } = useSelector((state: RootState) => state.professionals)
   const { setHasProfessionalProfile } = useContext(AuthContext)
 
@@ -55,10 +59,7 @@ export default function CreateProfessionalProfileScreen() {
       })).unwrap()
 
       setHasProfessionalProfile(true)
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "UserTabs" as never }]
-      })
+      navigation.replace("ProviderTabs")
     } catch (e: any) {
       // Manejar error específico de perfil duplicado
       if (e?.data?.error === 'DUPLICATE_PROFILE' || e?.message?.includes('Ya tienes un perfil')) {
@@ -70,10 +71,7 @@ export default function CreateProfessionalProfileScreen() {
               text: "OK",
               onPress: () => {
                 setHasProfessionalProfile(true)
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "UserTabs" as never }]
-                })
+                navigation.replace("ProviderTabs")
               }
             }
           ]

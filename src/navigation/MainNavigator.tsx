@@ -21,6 +21,7 @@ import ProviderNavigator from "./ProviderNavigator"
 import ServiceDetailScreen from "../screens/shared/ServiceDetailScreen"
 import ChatScreen from "../screens/shared/ChatScreen"
 import ReviewScreen from "../screens/shared/ReviewScreen"
+import ProfessionalDetailScreen from "../screens/professional/ProfessionalDetailScreen"
 
 const Stack = createNativeStackNavigator()
 
@@ -60,6 +61,7 @@ export default function MainNavigator() {
           <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
           <Stack.Screen name="Chat" component={ChatScreen} />
           <Stack.Screen name="Review" component={ReviewScreen} />
+          <Stack.Screen name="ProfessionalDetail" component={ProfessionalDetailScreen} />
         </>
       )}
     </Stack.Navigator>
