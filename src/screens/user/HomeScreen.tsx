@@ -47,6 +47,7 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.searchContainer}>
           <Searchbar
+            value=""
             placeholder="¿Qué servicio necesitas?"
             onPress={navigateToSearch}
             style={styles.searchbar}

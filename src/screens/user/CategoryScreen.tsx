@@ -4,21 +4,30 @@ import { useState, useEffect } from "react"
 import { StyleSheet, View, FlatList } from "react-native"
 import { useSelector } from "react-redux"
 import { useRoute, useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { Text, Searchbar, SegmentedButtons, Appbar } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import type { RootState } from "../../redux/store"
+import type { Service } from "../../redux/slices/servicesSlice"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
 
+type RootStackParamList = {
+  // otras screens ...
+  ServiceDetail: { serviceId: string }
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ServiceDetail'>;
+
 export default function CategoryScreen() {
   const route = useRoute()
-  const navigation = useNavigation()
+  const navigation = useNavigation<NavigationProp>()
   const { categoryId, categoryName } = route.params as { categoryId: string; categoryName: string }
   const { items: services } = useSelector((state: RootState) => state.services)
 
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("popular")
-  const [filteredServices, setFilteredServices] = useState(services)
+  const [filteredServices, setFilteredServices] = useState<Service[]>(services);
 
   useEffect(() => {
     let filtered = services.filter((service) => service.category.id === categoryId)
@@ -52,7 +61,7 @@ export default function CategoryScreen() {
   }, [categoryId, services, searchQuery, sortBy])
 
   const navigateToServiceDetail = (serviceId: string) => {
-    navigation.navigate("ServiceDetail" as never, { serviceId } as never)
+    navigation.navigate("ServiceDetail", { serviceId })
   }
 
   const renderServiceItem = ({ item }: { item: any }) => (
