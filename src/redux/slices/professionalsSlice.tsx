@@ -236,7 +236,19 @@ const professionalsSlice = createSlice({
       state.error = action.payload
     },
     addProfessional: (state, action: PayloadAction<Professional>) => {
-      state.items.push(action.payload)
+      // Asegurar que el profesional tenga un ID único
+      const newProfessional = {
+        ...action.payload,
+        id: action.payload.id || `professional_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
+      // Verificar que no exista ya un profesional con el mismo ID
+      const existingIndex = state.items.findIndex(p => p.id === newProfessional.id)
+      if (existingIndex === -1) {
+        state.items.push(newProfessional)
+      } else {
+        // Si ya existe, actualizar el existente
+        state.items[existingIndex] = newProfessional
+      }
     },
     updateProfessional: (state, action: PayloadAction<Professional>) => {
       const index = state.items.findIndex(p => p.id === action.payload.id)
@@ -257,7 +269,19 @@ const professionalsSlice = createSlice({
       .addCase(createProfessionalProfile.fulfilled, (state, action) => {
         state.status = "succeeded"
         state.error = null
-        state.items.push(action.payload)
+        // Asegurar que el profesional tenga un ID único
+        const newProfessional = {
+          ...action.payload,
+          id: action.payload.id || `professional_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        }
+        // Verificar que no exista ya un profesional con el mismo ID
+        const existingIndex = state.items.findIndex(p => p.id === newProfessional.id)
+        if (existingIndex === -1) {
+          state.items.push(newProfessional)
+        } else {
+          // Si ya existe, actualizar el existente
+          state.items[existingIndex] = newProfessional
+        }
       })
       .addCase(createProfessionalProfile.rejected, (state, action) => {
         state.status = "failed"

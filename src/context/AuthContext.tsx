@@ -67,12 +67,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         password
       })
 
+      console.log("LOGIN RESPONSE:", response.data);
+
       const { user, tokens } = response.data
 
       // Guardar tokens y usuario
       await AsyncStorage.setItem("@LoQueQuieras:user", JSON.stringify(user))
       await AsyncStorage.setItem("@LoQueQuieras:token", tokens.accessToken)
       await AsyncStorage.setItem("@LoQueQuieras:refreshToken", tokens.refreshToken)
+      
+      const test = await AsyncStorage.getItem("@LoQueQuieras:token")
+      console.log("TOKEN TRAS GUARDAR:", test)
 
       setCurrentUser(user)
       setUserRole(user.role)

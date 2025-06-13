@@ -3,6 +3,9 @@ const express = require('express');
 const Professional = require('../models/Professionals');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
+// Verificar que el modelo se importó correctamente
+console.log('Professional model loaded:', Professional ? 'YES' : 'NO');
+
 const router = express.Router();
 
 // Buscar profesionales
@@ -92,21 +95,47 @@ router.get('/:id', async (req, res) => {
 // Crear/actualizar perfil profesional
 router.post('/profile', authenticateToken, async (req, res) => {
   try {
+    console.log('Creating professional profile for user:', req.user._id);
+    console.log('Request body:', req.body);
+    
     const existingProfile = await Professional.findOne({ user: req.user._id });
     
     if (existingProfile) {
-      Object.assign(existingProfile, req.body);
+      console.log('Updating existing profile');
+      // Excluir el campo user del request body para evitar conflictos
+      const { user, ...updateData } = req.body;
+      Object.assign(existingProfile, updateData);
       await existingProfile.save();
       res.json({ professional: existingProfile });
     } else {
+      console.log('Creating new profile');
+      // Excluir el campo user del request body y usar req.user._id
+      const { user, ...profileData } = req.body;
       const professional = new Professional({
-        ...req.body,
+        ...profileData,
         user: req.user._id
       });
+      console.log('Professional object to save:', professional);
       await professional.save();
       res.status(201).json({ professional });
     }
   } catch (error) {
+    console.error('Error creating professional profile:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // Si es un error de validación, devolver detalles específicos
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        message: 'Error de validación',
+        errors: validationErrors 
+      });
+    }
+    
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

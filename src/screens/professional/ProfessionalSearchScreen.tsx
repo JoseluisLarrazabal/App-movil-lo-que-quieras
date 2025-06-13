@@ -106,6 +106,7 @@ export default function ProfessionalSearchScreen() {
         <Text style={styles.filterTitle}>Profesiones:</Text>
         <FlatList
           data={professions}
+          keyExtractor={(item) => item}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.professionsContainer}

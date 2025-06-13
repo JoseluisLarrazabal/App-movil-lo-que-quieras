@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 const http = require('http');
 const socketIo = require('socket.io');
 const rateLimit = require('express-rate-limit');
-const professionalsRoutes = require('./routes/professionals');
+const professionalsRoutes = require('./routes/Professionals');
 
 // Agregar después de las importaciones existentes
 require('./models/User');
@@ -13,6 +13,7 @@ require('./models/Category');
 require('./models/Service');
 require('./models/Booking');
 require('./models/Chat');
+require('./models/Professionals');
 
 
 // El resto del código permanece igual...
