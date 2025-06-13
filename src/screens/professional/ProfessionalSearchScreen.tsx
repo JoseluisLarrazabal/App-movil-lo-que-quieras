@@ -112,8 +112,12 @@ export default function ProfessionalSearchScreen() {
           renderItem={({ item }) => (
             <Chip
               selected={filters.profession === item}
+              style={[
+                styles.professionChip,
+                filters.profession === item && { backgroundColor: theme.colors.primary }
+              ]}
+              textStyle={filters.profession === item ? { color: "#fff" } : undefined}
               onPress={() => handleProfessionSelect(item)}
-              style={styles.professionChip}
             >
               {item}
             </Chip>
@@ -214,7 +218,7 @@ const styles = StyleSheet.create({
   },
   professionalsList: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingBottom: 140,
   },
   emptyContainer: {
     alignItems: "center",

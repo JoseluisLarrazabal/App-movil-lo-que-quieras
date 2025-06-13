@@ -2,7 +2,7 @@
 import { StyleSheet, View, TouchableOpacity, Linking, Alert } from "react-native"
 import { Card, Avatar, Text, Chip, Button } from "react-native-paper"
 import { theme } from "../theme"
-import type { Professional } from "../redux/slices/professionalsSlice"  // ✅ USAR el tipo correcto
+import type { Professional } from "../redux/slices/professionalsSlice"
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -14,13 +14,12 @@ type RootStackParamList = {
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProfessionalDetail'>;
 
 interface ProfessionalCardProps {
-  professional: Professional  // ✅ CAMBIAR a Professional completo
+  professional: Professional
 }
 
 export default function ProfessionalCard({ professional }: ProfessionalCardProps) {
   const navigation = useNavigation<NavigationProp>();
   
-  // ✅ IMPLEMENTAR lógica de contacto real
   const handleContact = () => {
     Alert.alert(
       "Contactar",
@@ -57,67 +56,80 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   return (
     <TouchableOpacity onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional.id })}>
       <Card style={styles.card}>
-        <Card.Content>
+        <Card.Content style={styles.cardContent}>
+          {/* Header principal */}
           <View style={styles.header}>
-            <Avatar.Image size={60} source={{ uri: professional.user.avatar }} />
-            <View style={styles.info}>
-              <Text style={styles.name}>{professional.user.name}</Text>
-              <Text style={styles.profession}>{professional.profession}</Text>
-              <Text style={styles.experience}>
-                {professional.experience.years} años de experiencia
-              </Text>
-              <View style={styles.rating}>
-                <Text style={styles.ratingText}>★ {professional.rating}</Text>
-                <Text style={styles.location}>• {professional.workLocation.city}</Text>
-                {/* ✅ AGREGAR verificación */}
+            <Avatar.Image size={50} source={{ uri: professional.user.avatar }} />
+            
+            <View style={styles.mainInfo}>
+              <View style={styles.nameRow}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {professional.user.name}
+                </Text>
                 {professional.verified && (
-                  <Chip style={styles.verifiedChip} textStyle={styles.verifiedText}>
-                    ✓
-                  </Chip>
+                  <View style={styles.verifiedBadge}>
+                    <Text style={styles.verifiedText}>✓</Text>
+                  </View>
                 )}
               </View>
+              
+              <Text style={styles.profession} numberOfLines={1}>
+                {professional.profession}
+              </Text>
+              
+              <View style={styles.metaRow}>
+                <Text style={styles.experience}>
+                  {professional.experience.years} años exp.
+                </Text>
+                <Text style={styles.rating}>
+                  ★ {professional.rating}
+                </Text>
+                <Text style={styles.location} numberOfLines={1}>
+                  {professional.workLocation.city}
+                </Text>
+              </View>
             </View>
-            <View style={styles.rightSection}>
+
+            <View style={styles.priceContainer}>
               {professional.rates.hourly && (
-                <Text style={styles.rate}>${professional.rates.hourly}/h</Text>
+                <Text style={styles.price}>${professional.rates.hourly}/h</Text>
               )}
               {professional.rates.daily && (
-                <Text style={styles.rate}>${professional.rates.daily}/día</Text>
+                <Text style={styles.priceSecondary}>${professional.rates.daily}/día</Text>
               )}
-              <Chip style={styles.availabilityChip}>
-                {professional.availability.type}
-              </Chip>
+              <View style={styles.availabilityChip}>
+                <Text style={styles.chipText}>
+                  {professional.availability.type}
+                </Text>
+              </View>
             </View>
           </View>
 
-          <View style={styles.specialties}>
-            {professional.specialties.slice(0, 3).map((specialty, index) => (
-              <Chip key={index} style={styles.specialtyChip}>
-                {specialty}
-              </Chip>
-            ))}
-            {/* ✅ AGREGAR indicador de más especialidades */}
-            {professional.specialties.length > 3 && (
-              <Text style={styles.moreSpecialties}>+{professional.specialties.length - 3} más</Text>
-            )}
-          </View>
-
-          {/* ✅ AGREGAR información adicional */}
-          <View style={styles.footer}>
-            <Text style={styles.stats}>
-              {professional.projectsCompleted} trabajos • {professional.responseTime}
+          {/* Especialidad principal */}
+          <View style={styles.specialtyContainer}>
+            <Text style={styles.specialtyLabel}>Especialidad:</Text>
+            <Text style={styles.specialtyValue} numberOfLines={1}>
+              {professional.specialties[0]}
+              {professional.specialties.length > 1 && ` +${professional.specialties.length - 1} más`}
             </Text>
           </View>
 
+          {/* Botones de acción */}
           <View style={styles.actions}>
             <Button 
               mode="outlined" 
-              style={styles.actionButton} 
+              style={styles.outlinedButton}
+              labelStyle={styles.buttonText}
               onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional.id })}
             >
               Ver perfil
             </Button>
-            <Button mode="contained" style={styles.actionButton} onPress={handleContact}>
+            <Button 
+              mode="contained" 
+              style={styles.containedButton}
+              labelStyle={styles.buttonText}
+              onPress={handleContact}
+            >
               Contactar
             </Button>
           </View>
@@ -127,105 +139,148 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   )
 }
 
-// ✅ ACTUALIZAR estilos
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 12,
+    marginHorizontal: 16,
+    marginVertical: 6,
     borderRadius: 12,
-    elevation: 2,  // ✅ AGREGAR elevación
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardContent: {
+    padding: 16,
   },
   header: {
     flexDirection: "row",
     marginBottom: 12,
+    alignItems: 'flex-start',
   },
-  info: {
+  mainInfo: {
     flex: 1,
     marginLeft: 12,
+    marginRight: 8,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
   },
   name: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 2,
-    color: theme.colors.text,  // ✅ AGREGAR color explícito
+    color: theme.colors.text,
+    flex: 1,
+    marginRight: 6,
+  },
+  verifiedBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifiedText: {
+    fontSize: 10,
+    color: "white",
+    fontWeight: 'bold',
   },
   profession: {
     fontSize: 14,
     color: theme.colors.primary,
     fontWeight: "600",
-    marginBottom: 2,
+    marginBottom: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   experience: {
-    fontSize: 12,
-    color: theme.colors.placeholder,
-    marginBottom: 4,
-  },
-  rating: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  ratingText: {
-    fontSize: 12,
-    color: "#F59E0B",
-    marginRight: 4,  // ✅ AJUSTAR margen
-  },
-  location: {
-    fontSize: 10,
-    color: theme.colors.placeholder,
-    marginRight: 8,  // ✅ AGREGAR margen
-  },
-  // ✅ AGREGAR estilos nuevos
-  verifiedChip: {
-    height: 20,
-    backgroundColor: theme.colors.success,
-  },
-  verifiedText: {
-    fontSize: 8,
-    color: "white",
-  },
-  rightSection: {
-    alignItems: "flex-end",
-  },
-  rate: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: theme.colors.primary,
-    marginBottom: 4,
-  },
-  availabilityChip: {
-    height: 24,
-    backgroundColor: theme.colors.success,
-  },
-  specialties: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",  // ✅ AGREGAR
-    marginBottom: 12,
-  },
-  specialtyChip: {
-    marginRight: 6,
-    marginBottom: 4,
-    height: 24,
-    backgroundColor: theme.colors.background,  // ✅ CAMBIAR color
-  },
-  moreSpecialties: {
-    fontSize: 10,
-    color: theme.colors.placeholder,
-    fontStyle: "italic",
-  },
-  footer: {
-    marginBottom: 12,
-  },
-  stats: {
     fontSize: 11,
     color: theme.colors.placeholder,
   },
+  rating: {
+    fontSize: 11,
+    color: "#F59E0B",
+    fontWeight: '600',
+  },
+  location: {
+    fontSize: 11,
+    color: theme.colors.placeholder,
+    flex: 1,
+  },
+  priceContainer: {
+    alignItems: "flex-end",
+    minWidth: 75,
+  },
+  price: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: theme.colors.primary,
+    marginBottom: 2,
+  },
+  priceSecondary: {
+    fontSize: 11,
+    color: theme.colors.placeholder,
+    marginBottom: 4,
+  },
+  availabilityChip: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 24,
+    alignSelf: 'flex-end',
+  },
+  chipText: {
+    fontSize: 10,
+    color: "white",
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  specialtyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.background,
+  },
+  specialtyLabel: {
+    fontSize: 12,
+    color: theme.colors.placeholder,
+    marginRight: 6,
+    fontWeight: '500',
+  },
+  specialtyValue: {
+    fontSize: 12,
+    color: theme.colors.text,
+    flex: 1,
+  },
   actions: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,  // ✅ AGREGAR gap
+    gap: 10,
   },
-  actionButton: {
+  outlinedButton: {
     flex: 1,
-    borderRadius: 8,  // ✅ AGREGAR border radius
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    paddingVertical: 2,
+  },
+  containedButton: {
+    flex: 1,
+    borderRadius: 8,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 2,
+  },
+  buttonText: {
+    fontSize: 12,
   },
 })

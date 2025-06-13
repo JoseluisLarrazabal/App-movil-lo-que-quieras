@@ -4,7 +4,7 @@
 import { useSelector } from "react-redux"
 import { StyleSheet, View, ScrollView, Linking, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Avatar, Card, Chip, Title, Text, Button, Paragraph } from "react-native-paper"
+import { Avatar, Card, Title, Text, Button, Paragraph } from "react-native-paper"
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native"
 import type { RootState } from "../../redux/store"
 import { theme } from "../../theme"
@@ -56,15 +56,19 @@ export default function ProfessionalDetailScreen() {
           <Card.Content style={styles.cardContent}>
             <Avatar.Image size={90} source={{ uri: professional.user.avatar }} />
             <Title style={styles.name}>{professional.user.name}</Title>
-            <Chip style={styles.professionChip}>{professional.profession}</Chip>
+            
+            <View style={styles.professionChip}>
+              <Text style={styles.professionText}>{professional.profession}</Text>
+            </View>
+            
             <Text style={styles.city}>{professional.workLocation.city}</Text>
             <View style={styles.ratingRow}>
               <Text style={styles.rating}>★ {professional.rating}</Text>
               <Text style={styles.secondary}>({professional.projectsCompleted} trabajos)</Text>
               {professional.verified && (
-                <Chip style={styles.verifiedChip} textStyle={styles.verifiedText}>
-                  ✓ Verificado
-                </Chip>
+                <View style={styles.verifiedChip}>
+                  <Text style={styles.verifiedText}>✓ Verificado</Text>
+                </View>
               )}
             </View>
           </Card.Content>
@@ -75,28 +79,39 @@ export default function ProfessionalDetailScreen() {
             <Title style={styles.sectionTitle}>Especialidades</Title>
             <View style={styles.row}>
               {professional.specialties.map((s, i) => (
-                <Chip key={i} style={styles.specialtyChip}>{s}</Chip>
+                <View key={i} style={styles.specialtyChip}>
+                  <Text style={styles.specialtyText}>{s}</Text>
+                </View>
               ))}
             </View>
+            
             <Title style={styles.sectionTitle}>Habilidades</Title>
             <View style={styles.row}>
               {professional.skills.map((s, i) => (
-                <Chip key={i} style={styles.skillChip}>{s}</Chip>
+                <View key={i} style={styles.skillChip}>
+                  <Text style={styles.skillText}>{s}</Text>
+                </View>
               ))}
             </View>
+            
             <Title style={styles.sectionTitle}>Tarifas</Title>
-            {professional.rates.hourly && (
-              <Text>• ${professional.rates.hourly}/h</Text>
-            )}
-            {professional.rates.daily && (
-              <Text>• ${professional.rates.daily}/día</Text>
-            )}
-            {professional.rates.project && (
-              <Text>• {professional.rates.project}</Text>
-            )}
+            <View style={styles.ratesContainer}>
+              {professional.rates.hourly && (
+                <Text style={styles.rateText}>• ${professional.rates.hourly}/h</Text>
+              )}
+              {professional.rates.daily && (
+                <Text style={styles.rateText}>• ${professional.rates.daily}/día</Text>
+              )}
+              {professional.rates.project && (
+                <Text style={styles.rateText}>• {professional.rates.project}</Text>
+              )}
+            </View>
+            
             <Title style={styles.sectionTitle}>Contacto</Title>
-            <Text>Teléfono: {professional.contactInfo.phone}</Text>
-            <Text>Ciudad: {professional.workLocation.city}</Text>
+            <View style={styles.contactContainer}>
+              <Text style={styles.contactText}>Teléfono: {professional.contactInfo.phone}</Text>
+              <Text style={styles.contactText}>Ciudad: {professional.workLocation.city}</Text>
+            </View>
           </Card.Content>
         </Card>
 
@@ -138,18 +153,98 @@ const styles = StyleSheet.create({
   profileCard: { margin: 16, borderRadius: 16 },
   cardContent: { alignItems: "center", paddingVertical: 24 },
   name: { fontSize: 22, fontWeight: "bold", marginTop: 6 },
-  professionChip: { marginTop: 8, backgroundColor: theme.colors.primary, color: "white" },
+  
+  // Chip personalizado para profesión
+  professionChip: { 
+    marginTop: 8, 
+    backgroundColor: theme.colors.primary, 
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  professionText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
   city: { fontSize: 13, marginTop: 4, color: theme.colors.placeholder },
   ratingRow: { flexDirection: "row", alignItems: "center", marginTop: 8, gap: 8 },
   rating: { fontWeight: "bold", color: "#F59E0B", fontSize: 16 },
   secondary: { color: theme.colors.placeholder, marginLeft: 4 },
-  verifiedChip: { backgroundColor: theme.colors.success, height: 22, marginLeft: 8 },
-  verifiedText: { fontSize: 10, color: "white" },
+  
+  // Chip verificado personalizado
+  verifiedChip: { 
+    backgroundColor: theme.colors.success, 
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifiedText: { 
+    fontSize: 10, 
+    color: "white",
+    fontWeight: '600',
+  },
+  
   infoCard: { marginHorizontal: 16, marginBottom: 16, borderRadius: 14 },
   sectionTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 8, marginTop: 12 },
   row: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
-  specialtyChip: { marginRight: 8, marginBottom: 8, backgroundColor: theme.colors.surface },
-  skillChip: { marginRight: 8, marginBottom: 8, backgroundColor: theme.colors.tertiary },
+  
+  // Chips de especialidades personalizados
+  specialtyChip: { 
+    marginRight: 8, 
+    marginBottom: 8, 
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  specialtyText: {
+    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: '500',
+  },
+  
+  // Chips de habilidades personalizados
+  skillChip: { 
+    marginRight: 8, 
+    marginBottom: 8, 
+    backgroundColor: theme.colors.tertiary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  skillText: {
+    fontSize: 12,
+    color: theme.colors.text,
+    fontWeight: '500',
+  },
+  
+  // Contenedores adicionales para mejor organización
+  ratesContainer: {
+    marginBottom: 8,
+  },
+  rateText: {
+    fontSize: 14,
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  contactContainer: {
+    marginBottom: 8,
+  },
+  contactText: {
+    fontSize: 14,
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  
   actions: { flexDirection: "row", justifyContent: "space-between", margin: 24, gap: 8 },
   contactButton: { flex: 1, borderRadius: 12, backgroundColor: theme.colors.primary },
   backButton: { flex: 1, borderRadius: 12 }
