@@ -8,7 +8,6 @@ import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { AuthContext } from "../../context/AuthContext"
 import type { RootState } from "../../redux/store"
-import { setFeaturedCategories } from "../../redux/slices/categoriesSlice"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
 import CategoryButton from "../../components/CategoryButton"
@@ -19,11 +18,6 @@ export default function HomeScreen() {
   const { currentUser } = useContext(AuthContext)
   const { items: categories } = useSelector((state: RootState) => state.categories)
   const { popularServices } = useSelector((state: RootState) => state.services)
-
-  useEffect(() => {
-    // Set featured categories (first 4)
-    dispatch(setFeaturedCategories(categories.slice(0, 4)))
-  }, [categories, dispatch])
 
   const navigateToSearch = () => {
     navigation.navigate("Search" as never)
@@ -137,7 +131,7 @@ export default function HomeScreen() {
             <Button 
               mode="text" 
               labelStyle={styles.sectionButtonLabel}
-              onPress={() => {}}
+              onPress={() => navigation.navigate("AllCategoriesScreen" as never)}
               icon="arrow-right"
             >
               Ver todas
@@ -145,7 +139,7 @@ export default function HomeScreen() {
           </View>
           <FlatList
             data={categories.slice(0, 4)}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesContainer}

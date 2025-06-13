@@ -45,10 +45,18 @@ app.use('/api/', limiter);
 
 // Importar rutas
 const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
+const categoriesRoutes = require('./routes/categories');
+const servicesRoutes = require('./routes/services');
+const bookingsRoutes = require('./routes/bookings');
 
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/professionals', professionalsRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/categories', categoriesRoutes);
+app.use('/api/services', servicesRoutes);
+app.use('/api/bookings', bookingsRoutes);
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
@@ -97,11 +105,6 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime()
   });
 });
-
-// app.use('/api/users', require('./routes/users'));
-// app.use('/api/services', require('./routes/services'));
-// app.use('/api/categories', require('./routes/categories'));
-// app.use('/api/bookings', require('./routes/bookings'));
 
 // Middleware para rutas no encontradas
 app.use('*', (req, res) => {

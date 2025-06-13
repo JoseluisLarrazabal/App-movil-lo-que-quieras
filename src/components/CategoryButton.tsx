@@ -1,15 +1,23 @@
 import { StyleSheet, TouchableOpacity, View } from "react-native"
 import { Text } from "react-native-paper"
 import { theme } from "../theme"
+import type { Category } from "../redux/slices/categoriesSlice"
+
+const iconMap: Record<string, string> = {
+  broom: "🧹",
+  wrench: "🔧",
+  "lightning-bolt": "⚡",
+  hammer: "🔨",
+  tree: "🌱",
+  brush: "🎨",
+  car: "🚗",
+  laptop: "💻",
+  heart: "❤️",
+  school: "🏫",
+}
 
 interface CategoryButtonProps {
-  category: {
-    id: string
-    name: string
-    icon: string
-    color: string
-    serviceCount: number
-  }
+  category: Category
   onPress: () => void
 }
 
@@ -17,12 +25,12 @@ export default function CategoryButton({ category, onPress }: CategoryButtonProp
   return (
     <TouchableOpacity onPress={onPress} style={styles.container}>
       <View style={[styles.iconContainer, { backgroundColor: category.color }]}>
-        <Text style={styles.icon}>{category.icon}</Text>
+        <Text style={styles.icon}>{iconMap[category.icon] || "❓"}</Text>
       </View>
       <Text style={styles.name} numberOfLines={2}>
         {category.name}
       </Text>
-      <Text style={styles.count}>{category.serviceCount} servicios</Text>
+      <Text style={styles.count}>{category.serviceCount || 0} servicios</Text>
     </TouchableOpacity>
   )
 }

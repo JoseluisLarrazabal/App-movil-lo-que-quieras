@@ -12,6 +12,8 @@ export type RootStackParamList = {
     Chat: { providerId: string; providerName: string };
     ProviderServices: undefined;
     AddService: { serviceId?: string; mode?: "edit" | "add" };
+    AllCategoriesScreen: undefined;
+    CategoryScreen: { categoryId: string; categoryName: string };
     // Agrega aquí otras screens y sus params
   };
 

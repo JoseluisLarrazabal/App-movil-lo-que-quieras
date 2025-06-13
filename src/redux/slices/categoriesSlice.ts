@@ -1,51 +1,96 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
+import api from "../../services/api"
 
 export interface Category {
-  id: string
+  _id: string
   name: string
+  description: string
   icon: string
   color: string
-  serviceCount: number
+  isActive: boolean
+  serviceCount?: number
+  featured?: boolean
+  order?: number
 }
 
 interface CategoriesState {
   items: Category[]
-  featuredCategories: Category[]
+  selectedCategory: Category | null
   status: "idle" | "loading" | "succeeded" | "failed"
   error: string | null
 }
 
+// Thunk para cargar categorías
+export const fetchCategories = createAsyncThunk<
+  Category[],
+  void,
+  { rejectValue: { message: string; data?: any } }
+>(
+  "categories/fetchCategories",
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log("🔍 Fetching categories from API...")
+      const res = await api.get("/categories")
+      console.log("📦 Categories Response:", res.data)
+      return res.data.categories
+    } catch (error: any) {
+      console.log("❌ Error fetching categories:", error)
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al cargar categorías",
+        data: error.response?.data
+      })
+    }
+  }
+)
+
 const initialState: CategoriesState = {
-  items: [
-    { id: "1", name: "Limpieza", icon: "🧹", color: "#E3F2FD", serviceCount: 45 },
-    { id: "2", name: "Plomería", icon: "🔧", color: "#F3E5F5", serviceCount: 32 },
-    { id: "3", name: "Electricidad", icon: "⚡", color: "#E8F5E8", serviceCount: 28 },
-    { id: "4", name: "Jardinería", icon: "🌱", color: "#FFF3E0", serviceCount: 19 },
-    { id: "5", name: "Pintura", icon: "🎨", color: "#FCE4EC", serviceCount: 24 },
-    { id: "6", name: "Carpintería", icon: "🔨", color: "#F1F8E9", serviceCount: 16 },
-    { id: "7", name: "Cocina", icon: "👨‍🍳", color: "#FFF8E1", serviceCount: 38 },
-    { id: "8", name: "Mascotas", icon: "🐕", color: "#E0F2F1", serviceCount: 22 },
-  ],
-  featuredCategories: [],
+  items: [],
+  selectedCategory: null,
   status: "idle",
-  error: null,
+  error: null
 }
 
 const categoriesSlice = createSlice({
   name: "categories",
   initialState,
   reducers: {
-    setFeaturedCategories: (state, action: PayloadAction<Category[]>) => {
-      state.featuredCategories = action.payload
+    setCategories: (state, action: PayloadAction<Category[]>) => {
+      state.items = action.payload
     },
-    updateCategoryServiceCount: (state, action: PayloadAction<{ id: string; count: number }>) => {
-      const category = state.items.find((cat) => cat.id === action.payload.id)
-      if (category) {
-        category.serviceCount = action.payload.count
-      }
+    setSelectedCategory: (state, action: PayloadAction<Category | null>) => {
+      state.selectedCategory = action.payload
     },
+    setStatus: (state, action: PayloadAction<CategoriesState['status']>) => {
+      state.status = action.payload
+    },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload
+    }
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCategories.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        console.log("✅ Categories loaded into state:", action.payload?.length || 0)
+        state.status = "succeeded"
+        state.error = null
+        state.items = action.payload
+      })
+      .addCase(fetchCategories.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+  }
 })
 
-export const { setFeaturedCategories, updateCategoryServiceCount } = categoriesSlice.actions
+export const {
+  setCategories,
+  setSelectedCategory,
+  setStatus,
+  setError
+} = categoriesSlice.actions
+
 export default categoriesSlice.reducer

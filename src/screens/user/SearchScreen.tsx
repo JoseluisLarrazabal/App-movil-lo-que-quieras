@@ -1,23 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { StyleSheet, View, FlatList } from "react-native"
 import { useSelector, useDispatch } from "react-redux"
 import { Searchbar, Text, Chip, Title } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
-import type { RootState } from "../../redux/store"
+import { useNavigation } from "@react-navigation/native"
+import type { RootState, AppDispatch } from "../../redux/store"
+import { fetchCategories, setSelectedCategory } from "../../redux/slices/categoriesSlice"
 import { addSearch } from "../../redux/slices/searchHistorySlice"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
+import CategoryButton from "../../components/CategoryButton"
 
 export default function SearchScreen() {
-  const dispatch = useDispatch()
+  const navigation = useNavigation()
+  const dispatch = useDispatch<AppDispatch>()
   const { items: services } = useSelector((state: RootState) => state.services)
-  const { items: categories } = useSelector((state: RootState) => state.categories)
+  const { items: categories, status: categoriesStatus } = useSelector((state: RootState) => state.categories)
   const { recentSearches } = useSelector((state: RootState) => state.searchHistory)
 
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredServices, setFilteredServices] = useState(services)
+
+  // Cargar categorías al montar el componente
+  useEffect(() => {
+    if (categoriesStatus === "idle") {
+      dispatch(fetchCategories())
+    }
+  }, [dispatch, categoriesStatus])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
@@ -39,6 +50,11 @@ export default function SearchScreen() {
   const handleRecentSearch = (search: string) => {
     setSearchQuery(search)
     handleSearch(search)
+  }
+
+  const handleCategoryPress = (category: any) => {
+    dispatch(setSelectedCategory(category))
+    handleSearch(category.name)
   }
 
   return (
@@ -64,13 +80,20 @@ export default function SearchScreen() {
           </View>
 
           <Title style={styles.suggestionsTitle}>Categorías populares</Title>
-          <View style={styles.chipsContainer}>
-            {categories.slice(0, 6).map((category) => (
-              <Chip key={category.id} style={styles.chip} onPress={() => handleRecentSearch(category.name)}>
-                {category.icon} {category.name}
-              </Chip>
-            ))}
-          </View>
+          <FlatList
+            data={categories}
+            keyExtractor={(item) => item._id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+            renderItem={({ item }) => (
+              <CategoryButton
+                key={item._id}
+                category={item}
+                onPress={() => handleCategoryPress(item)}
+              />
+            )}
+          />
         </View>
       )}
 
@@ -141,5 +164,10 @@ const styles = StyleSheet.create({
   },
   serviceItem: {
     marginBottom: 16,
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 8,
   },
 })

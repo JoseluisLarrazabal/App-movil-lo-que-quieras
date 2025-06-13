@@ -28,6 +28,8 @@ import ServiceDetailScreen from "../screens/user/ServiceDetailScreen"
 import ChatScreen from "../screens/user/ChatScreen"
 import ProviderServicesScreen from "../screens/provider/ProviderServicesScreen"
 import AddServiceScreen from "../screens/provider/AddServiceScreen"
+import AllCategoriesScreen from "../screens/user/AllCategoriesScreen"
+import CategoryScreen from "../screens/user/CategoryScreen"
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 const Tab = createBottomTabNavigator()
@@ -127,6 +129,8 @@ export default function MainNavigator() {
           <Stack.Screen name="Chat" component={ChatScreen} />
           <Stack.Screen name="ProviderServices" component={ProviderServicesScreen} />
           <Stack.Screen name="AddService" component={AddServiceScreen} />
+          <Stack.Screen name="AllCategoriesScreen" component={AllCategoriesScreen} />
+          <Stack.Screen name="CategoryScreen" component={CategoryScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>
