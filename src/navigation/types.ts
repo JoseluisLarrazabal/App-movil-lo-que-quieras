@@ -1,23 +1,42 @@
 // src/navigation/types.ts
 
 export type RootStackParamList = {
+    // Auth
     Onboarding: undefined;
     Login: undefined;
     Register: undefined;
-    UserTabs: undefined;
-    ProfessionalDetail: { professionalId: string };
     CreateProfessionalProfile: undefined;
-    ProviderProfile: { providerId: string };
+
+    // Main Navigators
+    UserTabs: undefined;
+    ProviderTabs: undefined;
+
+    // Shared Screens
     ServiceDetail: { serviceId: string };
     Chat: { providerId: string; providerName: string };
-    ProviderServices: undefined;
-    AddService: { serviceId?: string; mode?: "edit" | "add" };
     AllCategoriesScreen: undefined;
     CategoryScreen: { categoryId: string; categoryName: string };
     CreateBookingScreen: { serviceId: string };
     AllServicesScreen: undefined;
-    // Agrega aquí otras screens y sus params
-  };
+    ProfessionalDetail: { professionalId: string };
+    ProviderProfile: { providerId: string };
+    AddService: { serviceId?: string; mode?: "edit" | "add" };
+};
+
+export type UserTabParamList = {
+    Home: undefined;
+    Search: undefined;
+    Professionals: undefined;
+    Bookings: undefined;
+    Profile: undefined;
+};
+
+export type ProviderTabParamList = {
+    ProviderHome: undefined;
+    ProviderServices: undefined;
+    ProviderBookings: undefined;
+    ProviderProfile: undefined;
+};
 
 export type ProviderStackParamList = {
   ProviderServices: undefined;
