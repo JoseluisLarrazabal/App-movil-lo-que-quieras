@@ -1,5 +1,6 @@
 // redux/slices/professionalsSlice.ts
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
+import api from "../../services/api"
 
 export interface Professional {
   id: string
@@ -68,7 +69,26 @@ interface ProfessionalsState {
   error: string | null
 }
 
-// ✅ AQUÍ ESTABA EL PROBLEMA - Faltaba definir initialState
+// ----------- THUNK ASYNC -----------
+export const createProfessionalProfile = createAsyncThunk<
+  Professional,
+  Partial<Professional>,
+  { rejectValue: string }
+>(
+  "professionals/createProfessionalProfile",
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/professionals/profile", profileData)
+      return res.data.professional
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Error al crear perfil profesional"
+      )
+    }
+  }
+)
+
+// ----------- ESTADO INICIAL -----------
 const initialState: ProfessionalsState = {
   items: [
     // Mock data para testing
@@ -227,9 +247,26 @@ const professionalsSlice = createSlice({
     deleteProfessional: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(p => p.id !== action.payload)
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(createProfessionalProfile.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(createProfessionalProfile.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        state.error = null
+        state.items.push(action.payload)
+      })
+      .addCase(createProfessionalProfile.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload as string || "Error desconocido"
+      })
   }
 })
 
+// ----------- EXPORTS -----------
 export const {
   setProfessionals,
   setSearchResults,
