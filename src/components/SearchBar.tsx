@@ -12,6 +12,7 @@ export default function SearchBar({ onPress, placeholder = "¿Qué servicio nece
     <TouchableOpacity onPress={onPress} style={styles.container}>
       <View pointerEvents="none">
         <Searchbar
+          value=""
           placeholder={placeholder}
           style={styles.searchbar}
           inputStyle={styles.input}
