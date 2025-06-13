@@ -14,7 +14,7 @@ export default function ProfessionalDetailScreen() {
   const route = useRoute<RouteProp<{ params: { professionalId: string } }, "params">>()
   const navigation = useNavigation()
   const { items: professionals } = useSelector((state: RootState) => state.professionals)
-  const professional = professionals.find(p => p.id === route.params?.professionalId)
+  const professional = professionals.find(p => p._id === route.params?.professionalId)
 
   if (!professional) {
     return (
