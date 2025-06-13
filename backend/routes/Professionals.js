@@ -2,6 +2,7 @@
 const express = require('express');
 const Professional = require('../models/Professionals');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const User = require('../models/User');
 
 // Verificar que el modelo se importó correctamente
 console.log('Professional model loaded:', Professional ? 'YES' : 'NO');
@@ -103,21 +104,49 @@ router.post('/profile', authenticateToken, async (req, res) => {
     if (existingProfile) {
       console.log('Updating existing profile');
       // Excluir el campo user del request body para evitar conflictos
-      const { user, ...updateData } = req.body;
+      const { user, userInfo, ...updateData } = req.body;
       Object.assign(existingProfile, updateData);
       await existingProfile.save();
-      res.json({ professional: existingProfile });
+      
+      // Actualizar información del usuario si se proporciona
+      if (userInfo && (userInfo.name || userInfo.avatar)) {
+        const userUpdate = {};
+        if (userInfo.name) userUpdate.name = userInfo.name;
+        if (userInfo.avatar) userUpdate.avatar = userInfo.avatar;
+        
+        await User.findByIdAndUpdate(req.user._id, userUpdate);
+      }
+      
+      // Populate user information before sending response
+      const populatedProfile = await Professional.findById(existingProfile._id)
+        .populate('user', 'name avatar email');
+      
+      res.json({ professional: populatedProfile });
     } else {
       console.log('Creating new profile');
       // Excluir el campo user del request body y usar req.user._id
-      const { user, ...profileData } = req.body;
+      const { user, userInfo, ...profileData } = req.body;
       const professional = new Professional({
         ...profileData,
         user: req.user._id
       });
       console.log('Professional object to save:', professional);
       await professional.save();
-      res.status(201).json({ professional });
+      
+      // Actualizar información del usuario si se proporciona
+      if (userInfo && (userInfo.name || userInfo.avatar)) {
+        const userUpdate = {};
+        if (userInfo.name) userUpdate.name = userInfo.name;
+        if (userInfo.avatar) userUpdate.avatar = userInfo.avatar;
+        
+        await User.findByIdAndUpdate(req.user._id, userUpdate);
+      }
+      
+      // Populate user information before sending response
+      const populatedProfessional = await Professional.findById(professional._id)
+        .populate('user', 'name avatar email');
+      
+      res.status(201).json({ professional: populatedProfessional });
     }
   } catch (error) {
     console.error('Error creating professional profile:', error);

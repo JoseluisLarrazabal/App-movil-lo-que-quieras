@@ -32,6 +32,10 @@ export default function CreateProfessionalProfileScreen() {
 
     try {
       await dispatch(createProfessionalProfile({
+        userInfo: {
+          name,
+          avatar
+        },
         profession,
         specialties: specialties.split(",").map(s => s.trim()).filter(Boolean),
         experience: { years: Number(experienceYears) },

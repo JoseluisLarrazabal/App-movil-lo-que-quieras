@@ -8,6 +8,10 @@ export interface Professional {
     name: string
     avatar: string 
   }
+  userInfo?: {
+    name: string
+    avatar: string
+  }
   profession: string
   specialties: string[]
   experience: { 
