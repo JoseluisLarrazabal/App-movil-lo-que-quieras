@@ -22,6 +22,11 @@ import ServiceDetailScreen from "../screens/shared/ServiceDetailScreen"
 import ChatScreen from "../screens/shared/ChatScreen"
 import ReviewScreen from "../screens/shared/ReviewScreen"
 import ProfessionalDetailScreen from "../screens/professional/ProfessionalDetailScreen"
+import CreateBookingScreen from "../screens/user/CreateBookingScreen"
+import AllCategoriesScreen from "../screens/user/AllCategoriesScreen"
+import CategoryScreen from "../screens/user/CategoryScreen"
+import AllServicesScreen from "../screens/user/AllServicesScreen"
+import PublicProviderProfileScreen from "../screens/user/PublicProviderProfileScreen"
 
 const Stack = createNativeStackNavigator()
 
@@ -62,6 +67,11 @@ export default function MainNavigator() {
           <Stack.Screen name="Chat" component={ChatScreen} />
           <Stack.Screen name="Review" component={ReviewScreen} />
           <Stack.Screen name="ProfessionalDetail" component={ProfessionalDetailScreen} />
+          <Stack.Screen name="CreateBookingScreen" component={CreateBookingScreen} />
+          <Stack.Screen name="AllCategoriesScreen" component={AllCategoriesScreen} />
+          <Stack.Screen name="CategoryScreen" component={CategoryScreen} />
+          <Stack.Screen name="AllServicesScreen" component={AllServicesScreen} />
+          <Stack.Screen name="ProviderPublicProfile" component={PublicProviderProfileScreen} />
         </>
       )}
     </Stack.Navigator>
