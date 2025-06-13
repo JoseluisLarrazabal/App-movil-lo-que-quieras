@@ -161,5 +161,6 @@ const professionalSchema = new mongoose.Schema({
   professionalSchema.index({ 'workLocation.coordinates': '2dsphere' });
   professionalSchema.index({ rating: -1 });
   professionalSchema.index({ isActive: 1 });
+  professionalSchema.index({ user: 1 }, { unique: true });
   
   module.exports = mongoose.model('Professional', professionalSchema);

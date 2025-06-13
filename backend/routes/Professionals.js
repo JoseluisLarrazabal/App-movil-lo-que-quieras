@@ -9,6 +9,20 @@ console.log('Professional model loaded:', Professional ? 'YES' : 'NO');
 
 const router = express.Router();
 
+// Middleware para verificar que el usuario es provider
+const ensureProviderRole = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'provider') {
+      return res.status(403).json({ 
+        message: 'Solo los proveedores pueden crear perfiles profesionales' 
+      });
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
 // Buscar profesionales
 router.get('/search', async (req, res) => {
   try {
@@ -56,7 +70,7 @@ router.get('/search', async (req, res) => {
     if (minRating) filters.rating = { $gte: Number(minRating) };
 
     const professionals = await Professional.find(filters)
-      .populate('user', 'name avatar')
+      .populate('user', 'name avatar _id')
       .sort({ rating: -1, projectsCompleted: -1 })
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit));
@@ -81,7 +95,7 @@ router.get('/search', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const professional = await Professional.findById(req.params.id)
-      .populate('user', 'name avatar email location');
+      .populate('user', 'name avatar email location _id');
 
     if (!professional || !professional.isActive) {
       return res.status(404).json({ message: 'Profesional no encontrado' });
@@ -94,7 +108,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear/actualizar perfil profesional
-router.post('/profile', authenticateToken, async (req, res) => {
+router.post('/profile', authenticateToken, ensureProviderRole, async (req, res) => {
   try {
     console.log('Creating professional profile for user:', req.user._id);
     console.log('Request body:', req.body);
@@ -119,34 +133,45 @@ router.post('/profile', authenticateToken, async (req, res) => {
       
       // Populate user information before sending response
       const populatedProfile = await Professional.findById(existingProfile._id)
-        .populate('user', 'name avatar email');
+        .populate('user', 'name avatar email _id');
       
       res.json({ professional: populatedProfile });
     } else {
       console.log('Creating new profile');
       // Excluir el campo user del request body y usar req.user._id
       const { user, userInfo, ...profileData } = req.body;
-      const professional = new Professional({
-        ...profileData,
-        user: req.user._id
-      });
-      console.log('Professional object to save:', professional);
-      await professional.save();
       
-      // Actualizar información del usuario si se proporciona
-      if (userInfo && (userInfo.name || userInfo.avatar)) {
-        const userUpdate = {};
-        if (userInfo.name) userUpdate.name = userInfo.name;
-        if (userInfo.avatar) userUpdate.avatar = userInfo.avatar;
+      try {
+        const professional = new Professional({
+          ...profileData,
+          user: req.user._id
+        });
+        console.log('Professional object to save:', professional);
+        await professional.save();
         
-        await User.findByIdAndUpdate(req.user._id, userUpdate);
+        // Actualizar información del usuario si se proporciona
+        if (userInfo && (userInfo.name || userInfo.avatar)) {
+          const userUpdate = {};
+          if (userInfo.name) userUpdate.name = userInfo.name;
+          if (userInfo.avatar) userUpdate.avatar = userInfo.avatar;
+          
+          await User.findByIdAndUpdate(req.user._id, userUpdate);
+        }
+        
+        // Populate user information before sending response
+        const populatedProfessional = await Professional.findById(professional._id)
+          .populate('user', 'name avatar email _id');
+        
+        res.status(201).json({ professional: populatedProfessional });
+      } catch (e) {
+        if (e.code === 11000) {
+          return res.status(409).json({ 
+            message: 'Ya tienes un perfil profesional creado',
+            error: 'DUPLICATE_PROFILE'
+          });
+        }
+        throw e;
       }
-      
-      // Populate user information before sending response
-      const populatedProfessional = await Professional.findById(professional._id)
-        .populate('user', 'name avatar email');
-      
-      res.status(201).json({ professional: populatedProfessional });
     }
   } catch (error) {
     console.error('Error creating professional profile:', error);

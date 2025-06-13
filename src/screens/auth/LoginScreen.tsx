@@ -28,7 +28,26 @@ export default function LoginScreen() {
     try {
       await signIn(email, password)
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Error al iniciar sesión")
+      if (err.message === "Debes crear tu perfil profesional antes de poder acceder") {
+        Alert.alert(
+          "Perfil Profesional Requerido",
+          "Como proveedor, debes crear tu perfil profesional antes de poder acceder a la aplicación.",
+          [
+            {
+              text: "Crear Perfil",
+              onPress: () => {
+                navigation.navigate("CreateProfessionalProfile" as never)
+              }
+            },
+            {
+              text: "Cancelar",
+              style: "cancel"
+            }
+          ]
+        )
+      } else {
+        Alert.alert("Error", err.message || "Error al iniciar sesión")
+      }
     } finally {
       setIsLoading(false)
     }

@@ -54,7 +54,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   }
 
   return (
-    <TouchableOpacity onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional.id })}>
+    <TouchableOpacity onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional._id })}>
       <Card style={styles.card}>
         <Card.Content style={styles.cardContent}>
           {/* Header principal */}
@@ -120,7 +120,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
               mode="outlined" 
               style={styles.outlinedButton}
               labelStyle={styles.buttonText}
-              onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional.id })}
+              onPress={() => navigation.navigate("ProfessionalDetail", { professionalId: professional._id })}
             >
               Ver perfil
             </Button>

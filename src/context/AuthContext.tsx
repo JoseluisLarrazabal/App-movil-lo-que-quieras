@@ -19,10 +19,12 @@ interface AuthContextData {
   currentUser: User | null
   userRole: "user" | "provider" | "admin" | null
   isLoading: boolean
+  hasProfessionalProfile: boolean | null
   signIn: (email: string, password: string) => Promise<void>
   signUp: (name: string, email: string, password: string, role: "user" | "provider") => Promise<void>
   signOut: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
+  setHasProfessionalProfile: (hasProfile: boolean) => void
 }
 
 export const AuthContext = createContext<AuthContextData>({} as AuthContextData)
@@ -35,6 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [userRole, setUserRole] = useState<"user" | "provider" | "admin" | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasProfessionalProfile, setHasProfessionalProfile] = useState<boolean | null>(null)
 
   useEffect(() => {
     loadUserFromStorage()
@@ -49,6 +52,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const parsedUser = JSON.parse(storedUser) as User
         setCurrentUser(parsedUser)
         setUserRole(parsedUser.role)
+        
+        // Verificar si el provider tiene perfil profesional
+        if (parsedUser.role === 'provider') {
+          try {
+            const res = await api.get(`/professionals/search?userId=${parsedUser.id}`)
+            setHasProfessionalProfile(res.data?.professionals?.length > 0)
+          } catch {
+            setHasProfessionalProfile(false)
+          }
+        } else {
+          setHasProfessionalProfile(null)
+        }
       }
     } catch (error) {
       console.log("Error loading user from storage", error)
@@ -81,12 +96,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setCurrentUser(user)
       setUserRole(user.role)
+      
+      // Verificar si el provider tiene perfil profesional
+      if (user.role === "provider") {
+        try {
+          const res = await api.get(`/professionals/search?userId=${user.id}`)
+          setHasProfessionalProfile(res.data?.professionals?.length > 0)
+        } catch {
+          setHasProfessionalProfile(false)
+        }
+      } else {
+        setHasProfessionalProfile(null)
+      }
     } catch (error: any) {
       console.log("Error signing in", error)
       
       // Manejar errores específicos
       if (error.response?.status === 401) {
         throw new Error("Email o contraseña incorrectos")
+      } else if (error.response?.status === 403 && error.response?.data?.requiresProfessionalProfile) {
+        throw new Error("Debes crear tu perfil profesional antes de poder acceder")
       } else if (error.response?.data?.message) {
         throw new Error(error.response.data.message)
       } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network')) {
@@ -120,6 +149,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setCurrentUser(user)
       setUserRole(user.role)
+      
+      // Para nuevos providers, no tienen perfil profesional aún
+      if (user.role === "provider") {
+        setHasProfessionalProfile(false)
+      } else {
+        setHasProfessionalProfile(null)
+      }
     } catch (error: any) {
       console.log("Error signing up", error)
       
@@ -157,6 +193,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       setCurrentUser(null)
       setUserRole(null)
+      setHasProfessionalProfile(null)
     } catch (error) {
       console.log("Error signing out", error)
     } finally {
@@ -191,10 +228,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         currentUser,
         userRole,
         isLoading,
+        hasProfessionalProfile,
         signIn,
         signUp,
         signOut,
         updateProfile,
+        setHasProfessionalProfile,
       }}
     >
       {children}

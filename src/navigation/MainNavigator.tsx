@@ -93,23 +93,31 @@ function UserTabs() {
 }
 
 export default function MainNavigator() {
-  const { currentUser, userRole, isLoading } = useContext(AuthContext)
+  const { currentUser, userRole, isLoading, hasProfessionalProfile } = useContext(AuthContext)
 
-  if (isLoading) {
-    return null // Loading screen could be added here
+  // Pantalla de carga si falta info
+  if (isLoading || (userRole === "provider" && hasProfessionalProfile === null)) {
+    return null // O mostrar Spinner…
   }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!currentUser ? (
-        // Authentication Stack
+        // Auth screens
         <Stack.Group>
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="CreateProfessionalProfile" component={CreateProfessionalProfileScreen} />
         </Stack.Group>
+      ) : userRole === "provider" && !hasProfessionalProfile ? (
+        // Obliga a crear perfil profesional antes de otra cosa
+        <Stack.Screen
+          name="CreateProfessionalProfile"
+          component={CreateProfessionalProfileScreen}
+        />
       ) : (
-        // User Stack (simplified for this version)
+        // Tu stack normal para user/provider
         <Stack.Group>
           <Stack.Screen name="UserTabs" component={UserTabs} />
           <Stack.Screen name="ProfessionalDetail" component={ProfessionalDetailScreen} />
@@ -122,7 +130,5 @@ export default function MainNavigator() {
         </Stack.Group>
       )}
     </Stack.Navigator>
-
-
   )
 }

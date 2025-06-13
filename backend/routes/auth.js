@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const Professional = require('../models/Professionals');
 const { generateTokens, verifyRefreshToken } = require('../utils/jwt');
 const { registerSchema, loginSchema } = require('../utils/validation');
 const { authenticateToken } = require('../middleware/auth');
@@ -94,6 +95,17 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({
         message: 'Email o contraseña incorrectos'
       });
+    }
+
+    // Verificar si el usuario es proveedor y tiene perfil profesional
+    if (user.role === 'provider') {
+      const professionalProfile = await Professional.findOne({ user: user._id, isActive: true });
+      if (!professionalProfile) {
+        return res.status(403).json({
+          message: 'Debes crear tu perfil profesional antes de poder acceder',
+          requiresProfessionalProfile: true
+        });
+      }
     }
 
     // Actualizar último login

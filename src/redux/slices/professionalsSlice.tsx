@@ -3,8 +3,9 @@ import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
 import api from "../../services/api"
 
 export interface Professional {
-  id: string
+  _id: string
   user: { 
+    _id: string
     name: string
     avatar: string 
   }
@@ -74,10 +75,33 @@ interface ProfessionalsState {
 }
 
 // ----------- THUNK ASYNC -----------
+export const fetchProfessionals = createAsyncThunk<
+  Professional[],
+  void,
+  { rejectValue: { message: string; data?: any } }
+>(
+  "professionals/fetchProfessionals",
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log("🔍 Fetching professionals from API...")
+      const res = await api.get("/professionals/search")
+      console.log("📦 API Response:", res.data)
+      console.log("👥 Professionals found:", res.data.professionals?.length || 0)
+      return res.data.professionals
+    } catch (error: any) {
+      console.log("❌ Error fetching professionals:", error)
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al cargar profesionales",
+        data: error.response?.data
+      })
+    }
+  }
+)
+
 export const createProfessionalProfile = createAsyncThunk<
   Professional,
   Partial<Professional>,
-  { rejectValue: string }
+  { rejectValue: { message: string; data?: any } }
 >(
   "professionals/createProfessionalProfile",
   async (profileData, { rejectWithValue }) => {
@@ -85,9 +109,10 @@ export const createProfessionalProfile = createAsyncThunk<
       const res = await api.post("/professionals/profile", profileData)
       return res.data.professional
     } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Error al crear perfil profesional"
-      )
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al crear perfil profesional",
+        data: error.response?.data
+      })
     }
   }
 )
@@ -95,10 +120,12 @@ export const createProfessionalProfile = createAsyncThunk<
 // ----------- ESTADO INICIAL -----------
 const initialState: ProfessionalsState = {
   items: [
-    // Mock data para testing
+    // Mock data para testing (comentado para usar datos reales de la API)
+    /*
     {
-      id: "1",
+      _id: "1",
       user: {
+        _id: "1",
         name: "Carlos Mendoza",
         avatar: "https://randomuser.me/api/portraits/men/32.jpg"
       },
@@ -134,8 +161,9 @@ const initialState: ProfessionalsState = {
       responseTime: "< 2 horas"
     },
     {
-      id: "2",
+      _id: "2",
       user: {
+        _id: "2",
         name: "Dr. Ana García",
         avatar: "https://randomuser.me/api/portraits/women/44.jpg"
       },
@@ -169,8 +197,9 @@ const initialState: ProfessionalsState = {
       responseTime: "< 4 horas"
     },
     {
-      id: "3",
+      _id: "3",
       user: {
+        _id: "3",
         name: "Roberto Silva",
         avatar: "https://randomuser.me/api/portraits/men/45.jpg"
       },
@@ -203,6 +232,7 @@ const initialState: ProfessionalsState = {
       isActive: true,
       responseTime: "< 24 horas"
     }
+    */
   ],
   searchResults: [],
   selectedProfessional: null,
@@ -240,32 +270,41 @@ const professionalsSlice = createSlice({
       state.error = action.payload
     },
     addProfessional: (state, action: PayloadAction<Professional>) => {
+      // Remover cualquier perfil previo del mismo usuario antes de agregar el nuevo
+      state.items = state.items.filter(p => p.user._id !== action.payload.user._id)
       // Asegurar que el profesional tenga un ID único
       const newProfessional = {
         ...action.payload,
-        id: action.payload.id || `professional_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        _id: action.payload._id || `professional_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }
-      // Verificar que no exista ya un profesional con el mismo ID
-      const existingIndex = state.items.findIndex(p => p.id === newProfessional.id)
-      if (existingIndex === -1) {
-        state.items.push(newProfessional)
-      } else {
-        // Si ya existe, actualizar el existente
-        state.items[existingIndex] = newProfessional
-      }
+      state.items.push(newProfessional)
     },
     updateProfessional: (state, action: PayloadAction<Professional>) => {
-      const index = state.items.findIndex(p => p.id === action.payload.id)
+      const index = state.items.findIndex(p => p._id === action.payload._id)
       if (index !== -1) {
         state.items[index] = action.payload
       }
     },
     deleteProfessional: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(p => p.id !== action.payload)
+      state.items = state.items.filter(p => p._id !== action.payload)
     }
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchProfessionals.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(fetchProfessionals.fulfilled, (state, action) => {
+        console.log("✅ Professionals loaded into state:", action.payload?.length || 0)
+        state.status = "succeeded"
+        state.error = null
+        state.items = action.payload
+      })
+      .addCase(fetchProfessionals.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
       .addCase(createProfessionalProfile.pending, (state) => {
         state.status = "loading"
         state.error = null
@@ -273,23 +312,18 @@ const professionalsSlice = createSlice({
       .addCase(createProfessionalProfile.fulfilled, (state, action) => {
         state.status = "succeeded"
         state.error = null
+        // Remover cualquier perfil previo del mismo usuario antes de agregar el nuevo
+        state.items = state.items.filter(p => p.user._id !== action.payload.user._id)
         // Asegurar que el profesional tenga un ID único
         const newProfessional = {
           ...action.payload,
-          id: action.payload.id || `professional_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          _id: action.payload._id || `professional_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         }
-        // Verificar que no exista ya un profesional con el mismo ID
-        const existingIndex = state.items.findIndex(p => p.id === newProfessional.id)
-        if (existingIndex === -1) {
-          state.items.push(newProfessional)
-        } else {
-          // Si ya existe, actualizar el existente
-          state.items[existingIndex] = newProfessional
-        }
+        state.items.push(newProfessional)
       })
       .addCase(createProfessionalProfile.rejected, (state, action) => {
         state.status = "failed"
-        state.error = action.payload as string || "Error desconocido"
+        state.error = action.payload?.message || "Error desconocido"
       })
   }
 })

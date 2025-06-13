@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useContext } from "react"
 import { StyleSheet, View, ScrollView, Alert } from "react-native"
 import { Text, TextInput, Button, Title, Chip } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -8,11 +8,13 @@ import { theme } from "../../theme"
 import { useNavigation } from "@react-navigation/native"
 import type { RootState } from "../../redux/store"
 import type { AppDispatch } from "../../redux/store"
+import { AuthContext } from "../../context/AuthContext"
 
 export default function CreateProfessionalProfileScreen() {
   const dispatch = useDispatch<AppDispatch>()
   const navigation = useNavigation()
-  const { status, error } = useSelector((state: RootState) => state.professionals)  
+  const { status, error } = useSelector((state: RootState) => state.professionals)
+  const { setHasProfessionalProfile } = useContext(AuthContext)
 
   // Campos de formulario
   const [name, setName] = useState("")
@@ -52,11 +54,33 @@ export default function CreateProfessionalProfileScreen() {
         responseTime: "<24 horas"
       })).unwrap()
 
-      Alert.alert("¡Listo!", "Perfil creado correctamente", [
-        { text: "Ir a Profesionales", onPress: () => navigation.goBack() }
-      ])
+      setHasProfessionalProfile(true)
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "UserTabs" as never }]
+      })
     } catch (e: any) {
-      Alert.alert("Error", e || "Error al crear perfil profesional")
+      // Manejar error específico de perfil duplicado
+      if (e?.data?.error === 'DUPLICATE_PROFILE' || e?.message?.includes('Ya tienes un perfil')) {
+        Alert.alert(
+          "Perfil ya existe",
+          "Ya tienes un perfil profesional creado. Serás redirigido al inicio.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setHasProfessionalProfile(true)
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "UserTabs" as never }]
+                })
+              }
+            }
+          ]
+        )
+      } else {
+        Alert.alert("Error", e?.message || e || "Error al crear perfil profesional")
+      }
     }
   }
 

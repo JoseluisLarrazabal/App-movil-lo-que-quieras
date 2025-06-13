@@ -4,12 +4,12 @@
 import { useState, useEffect } from "react"
 import { StyleSheet, View, FlatList } from "react-native"
 import { useSelector, useDispatch } from "react-redux"
-import { Searchbar, Chip, SegmentedButtons, FAB, Text, Title } from "react-native-paper"
+import { Searchbar, Text, Chip, Title, SegmentedButtons } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
-import type { RootState } from "../../redux/store"
-import { setSearchResults, setFilters } from "../../redux/slices/professionalsSlice"
+import type { RootState, AppDispatch } from "../../redux/store"
+import { setSearchResults, setFilters, fetchProfessionals } from "../../redux/slices/professionalsSlice"
 import { theme } from "../../theme"
 import ProfessionalCard from "../../components/ProfessionalCard"
 
@@ -26,7 +26,7 @@ const normalize = (str: string) =>
 
 export default function ProfessionalSearchScreen() {
   const navigation = useNavigation<NavigationProp>()
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const { items: professionals, searchResults, filters } = useSelector((state: RootState) => state.professionals)
   
   const [searchQuery, setSearchQuery] = useState("")
@@ -37,11 +37,20 @@ export default function ProfessionalSearchScreen() {
     "Plomero", "Programador", "Disenador", "Mecanico"
   ]
 
+  // Cargar profesionales al montar el componente
+  useEffect(() => {
+    dispatch(fetchProfessionals())
+  }, [dispatch])
+
   useEffect(() => {
     searchProfessionals()
-  }, [searchQuery, filters.profession, availabilityFilter])
+  }, [searchQuery, filters.profession, availabilityFilter, professionals])
 
   const searchProfessionals = () => {
+    console.log("🔍 Searching professionals...")
+    console.log("📊 Total professionals in state:", professionals.length)
+    console.log("🔧 Current filters:", { searchQuery, profession: filters.profession, availabilityFilter })
+    
     let filtered = professionals;
 
     // Filtro por disponibilidad
@@ -76,6 +85,7 @@ export default function ProfessionalSearchScreen() {
 
     filtered.sort((a, b) => b.rating - a.rating);
 
+    console.log("✅ Filtered results:", filtered.length)
     dispatch(setSearchResults(filtered));
   };
 
@@ -142,7 +152,7 @@ export default function ProfessionalSearchScreen() {
 
       <FlatList
         data={searchResults}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <ProfessionalCard professional={item} />
         )}
@@ -154,13 +164,6 @@ export default function ProfessionalSearchScreen() {
             <Text style={styles.emptyText}>Intenta ajustar los filtros de busqueda</Text>
           </View>
         }
-      />
-
-      <FAB
-        icon="account-plus"
-        style={styles.fab}
-        onPress={() => navigation.navigate("CreateProfessionalProfile")} 
-        label="Crear perfil profesional"
       />
     </SafeAreaView>
   )
@@ -236,12 +239,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.placeholder,
     textAlign: "center",
-  },
-  fab: {
-    position: "absolute",
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: theme.colors.primary,
   },
 })

@@ -41,6 +41,15 @@ export default function RegisterScreen() {
 
     try {
       await signUp(name, email, password, role)
+
+      // Nuevo flujo: navegar según el rol
+      if (role === 'provider') {
+        // Para providers, navegar a crear perfil profesional
+        navigation.navigate("CreateProfessionalProfile" as never)
+      } else {
+        // Para usuarios normales, navegar a UserTabs
+        navigation.navigate("UserTabs" as never)
+      }
     } catch (err: any) {
       Alert.alert("Error", err.message || "Error al crear la cuenta")
     } finally {
