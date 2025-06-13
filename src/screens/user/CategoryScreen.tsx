@@ -108,7 +108,11 @@ export default function CategoryScreen() {
       <FlatList
         data={filteredServices}
         keyExtractor={(item) => item.id}
-        renderItem={renderServiceItem}
+        renderItem={({ item }) => (
+          <View key={item.id} style={styles.serviceItem}>
+            <ServiceCard service={item} onPress={() => navigateToServiceDetail(item.id)} />
+          </View>
+        )}
         contentContainerStyle={styles.servicesList}
         showsVerticalScrollIndicator={false}
         numColumns={1}

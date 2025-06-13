@@ -23,12 +23,47 @@ export default function CreateBookingScreen() {
   const [time, setTime] = useState("")
   const [notes, setNotes] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [dateError, setDateError] = useState("")
+  const [timeError, setTimeError] = useState("")
+
+  const validateDate = (dateStr: string) => {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+    if (!dateRegex.test(dateStr)) {
+      setDateError("Formato de fecha inválido. Use YYYY-MM-DD")
+      return false
+    }
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) {
+      setDateError("Fecha inválida")
+      return false
+    }
+    if (date < new Date()) {
+      setDateError("La fecha debe ser futura")
+      return false
+    }
+    setDateError("")
+    return true
+  }
+
+  const validateTime = (timeStr: string) => {
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
+    if (!timeRegex.test(timeStr)) {
+      setTimeError("Formato de hora inválido. Use HH:MM")
+      return false
+    }
+    setTimeError("")
+    return true
+  }
 
   const handleCreateBooking = async () => {
-    if (!date || !time) {
-      Alert.alert("Error", "Debes seleccionar fecha y hora")
+    // Validar campos
+    const isDateValid = validateDate(date)
+    const isTimeValid = validateTime(time)
+
+    if (!isDateValid || !isTimeValid) {
       return
     }
+
     setSubmitting(true)
     try {
       const result = await dispatch(createBooking({
@@ -37,12 +72,23 @@ export default function CreateBookingScreen() {
         scheduledTime: time,
         notes
       }))
+      
       if (createBooking.fulfilled.match(result)) {
-        Alert.alert("Reserva creada", "Tu reserva fue enviada y está pendiente de confirmación.", [
-          { text: "Ver mis reservas", onPress: () => navigation.navigate("Bookings" as never) }
-        ])
+        Alert.alert(
+          "Reserva creada", 
+          "Tu reserva fue enviada y está pendiente de confirmación.", 
+          [
+            { 
+              text: "Ver mis reservas", 
+              onPress: () => navigation.navigate("Bookings" as never) 
+            }
+          ]
+        )
       } else {
-        Alert.alert("Error", result.payload?.message || "No se pudo crear la reserva")
+        Alert.alert(
+          "Error", 
+          result.payload?.message || "No se pudo crear la reserva"
+        )
       }
     } catch (e) {
       Alert.alert("Error", "No se pudo crear la reserva")
@@ -58,17 +104,29 @@ export default function CreateBookingScreen() {
         <TextInput
           label="Fecha (YYYY-MM-DD)"
           value={date}
-          onChangeText={setDate}
+          onChangeText={(text) => {
+            setDate(text)
+            validateDate(text)
+          }}
           style={styles.input}
           placeholder="2024-07-01"
+          error={!!dateError}
         />
+        {dateError ? <HelperText type="error">{dateError}</HelperText> : null}
+
         <TextInput
           label="Hora (HH:MM)"
           value={time}
-          onChangeText={setTime}
+          onChangeText={(text) => {
+            setTime(text)
+            validateTime(text)
+          }}
           style={styles.input}
           placeholder="15:00"
+          error={!!timeError}
         />
+        {timeError ? <HelperText type="error">{timeError}</HelperText> : null}
+
         <TextInput
           label="Notas (opcional)"
           value={notes}
@@ -76,19 +134,26 @@ export default function CreateBookingScreen() {
           style={styles.input}
           multiline
         />
+        
         {status === "failed" && !!error && (
           <HelperText type="error">{error}</HelperText>
         )}
+        
         <Button
           mode="contained"
           style={styles.button}
           onPress={handleCreateBooking}
           loading={submitting}
-          disabled={submitting}
+          disabled={submitting || !!dateError || !!timeError}
         >
           Reservar
         </Button>
-        <Button mode="text" onPress={() => navigation.goBack()} style={styles.cancelButton}>
+        
+        <Button 
+          mode="text" 
+          onPress={() => navigation.goBack()} 
+          style={styles.cancelButton}
+        >
           Cancelar
         </Button>
       </View>

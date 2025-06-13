@@ -2,14 +2,18 @@ import React from "react"
 import { StyleSheet, View, FlatList } from "react-native"
 import { useSelector } from "react-redux"
 import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { Appbar, Title } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import type { RootState } from "../../redux/store"
+import type { RootStackParamList } from "../../navigation/types"
 import ServiceCard from "../../components/ServiceCard"
 import { theme } from "../../theme"
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export default function AllServicesScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<NavigationProp>()
   const { items: services } = useSelector((state: RootState) => state.services)
 
   return (
@@ -23,8 +27,11 @@ export default function AllServicesScreen() {
         data={services}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.serviceItemWrapper}>
-            <ServiceCard service={item} onPress={() => {}} />
+          <View key={item.id} style={styles.serviceItemWrapper}>
+            <ServiceCard 
+              service={item} 
+              onPress={() => navigation.navigate("CreateBookingScreen", { serviceId: item.id })} 
+            />
           </View>
         )}
         contentContainerStyle={styles.servicesList}

@@ -158,7 +158,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesContainer}
             renderItem={({ item }) => (
-              <View style={styles.categoryItemWrapper}>
+              <View key={item._id} style={styles.categoryItemWrapper}>
                 <CategoryButton category={item} onPress={() => handleCategoryPress(item)} />
               </View>
             )}
@@ -188,8 +188,11 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.servicesContainer}
             renderItem={({ item }) => (
-              <View style={styles.serviceItemWrapper}>
-                <ServiceCard service={item} onPress={() => {}} />
+              <View key={item.id} style={styles.serviceItemWrapper}>
+                <ServiceCard 
+                  service={item} 
+                  onPress={() => navigation.navigate("CreateBookingScreen", { serviceId: item.id })} 
+                />
               </View>
             )}
           />

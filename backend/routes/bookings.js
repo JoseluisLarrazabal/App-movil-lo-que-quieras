@@ -88,6 +88,16 @@ router.post('/', authenticateToken, async (req, res) => {
       address
     } = req.body;
 
+    console.log('📥 Recibiendo datos para nueva reserva:', req.body);
+
+    // Convertir scheduledDate a Date object para asegurar compatibilidad con el esquema
+    const parsedScheduledDate = new Date(scheduledDate);
+    if (isNaN(parsedScheduledDate.getTime())) {
+      return res.status(400).json({
+        message: 'Formato de fecha inválido'
+      });
+    }
+
     // Verificar que el servicio existe y está activo
     const service = await Service.findById(serviceId);
     if (!service || !service.isActive) {
@@ -106,7 +116,7 @@ router.post('/', authenticateToken, async (req, res) => {
     // Verificar disponibilidad (aquí podrías agregar lógica más compleja)
     const existingBooking = await Booking.findOne({
       service: serviceId,
-      scheduledDate,
+      scheduledDate: parsedScheduledDate, // Usar la fecha parseada
       scheduledTime,
       status: { $in: ['pending', 'confirmed'] }
     });
@@ -121,11 +131,11 @@ router.post('/', authenticateToken, async (req, res) => {
       service: serviceId,
       provider: service.provider,
       user: req.user._id,
-      scheduledDate,
+      scheduledDate: parsedScheduledDate, // Usar la fecha parseada
       scheduledTime,
       price: service.price,
       notes,
-      address
+      address // address podría ser undefined si el frontend no lo envía, lo cual está bien si no es required en el schema
     });
 
     await booking.save();
@@ -141,7 +151,14 @@ router.post('/', authenticateToken, async (req, res) => {
       booking: populatedBooking
     });
   } catch (error) {
-    console.error('Error creando reserva:', error);
+    console.error('❌ Error al crear reserva:', error);
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        message: 'Error de validación',
+        errors: errors
+      });
+    }
     res.status(500).json({
       message: 'Error interno del servidor'
     });
