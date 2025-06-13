@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const http = require('http');
 const socketIo = require('socket.io');
 const rateLimit = require('express-rate-limit');
+const professionalsRoutes = require('./routes/professionals');
 
 // Agregar después de las importaciones existentes
 require('./models/User');
@@ -12,6 +13,7 @@ require('./models/Category');
 require('./models/Service');
 require('./models/Booking');
 require('./models/Chat');
+
 
 // El resto del código permanece igual...
 
@@ -45,6 +47,7 @@ const authRoutes = require('./routes/auth');
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/professionals', professionalsRoutes);
 
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
