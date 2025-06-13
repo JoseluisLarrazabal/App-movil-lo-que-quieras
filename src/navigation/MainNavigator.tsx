@@ -4,6 +4,7 @@ import { useContext } from "react"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
+import type { RootStackParamList } from "./types"
 import { AuthContext } from "../context/AuthContext"
 import { theme } from "../theme"
 
@@ -17,11 +18,18 @@ import HomeScreen from "../screens/user/HomeScreen"
 import SearchScreen from "../screens/user/SearchScreen"
 import ProfileScreen from "../screens/user/ProfileScreen"
 import BookingsScreen from "../screens/user/BookingsScreen"
+import ProviderProfileScreen from "../screens/user/ProviderProfileScreen"
 import ProfessionalSearchScreen from "../screens/professional/ProfessionalSearchScreen"
 import ProfessionalDetailScreen from "../screens/professional/ProfessionalDetailScreen"
 import CreateProfessionalProfileScreen from "../screens/professional/CreateProfessionalProfileScreen"
 
-const Stack = createNativeStackNavigator()
+// Additional Screens
+import ServiceDetailScreen from "../screens/user/ServiceDetailScreen"
+import ChatScreen from "../screens/user/ChatScreen"
+import ProviderServicesScreen from "../screens/provider/ProviderServicesScreen"
+import AddServiceScreen from "../screens/provider/AddServiceScreen"
+
+const Stack = createNativeStackNavigator<RootStackParamList>()
 const Tab = createBottomTabNavigator()
 
 // User Bottom Tabs
@@ -106,6 +114,11 @@ export default function MainNavigator() {
           <Stack.Screen name="UserTabs" component={UserTabs} />
           <Stack.Screen name="ProfessionalDetail" component={ProfessionalDetailScreen} />
           <Stack.Screen name="CreateProfessionalProfile" component={CreateProfessionalProfileScreen} />
+          <Stack.Screen name="ProviderProfile" component={ProviderProfileScreen} />
+          <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+          <Stack.Screen name="ProviderServices" component={ProviderServicesScreen} />
+          <Stack.Screen name="AddService" component={AddServiceScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>

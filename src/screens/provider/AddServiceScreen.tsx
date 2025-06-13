@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { StyleSheet, View, ScrollView, Alert } from "react-native"
 import { useRoute, useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
 import { useSelector, useDispatch } from "react-redux"
 import { TextInput, Button, Card, Title, Paragraph, Chip, Appbar, Menu } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -10,9 +12,11 @@ import type { RootState } from "../../redux/store"
 import { addService, updateService } from "../../redux/slices/servicesSlice"
 import { theme } from "../../theme"
 
+type AddServiceScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "AddService">
+
 export default function AddServiceScreen() {
   const route = useRoute()
-  const navigation = useNavigation()
+  const navigation = useNavigation<AddServiceScreenNavigationProp>()
   const dispatch = useDispatch()
   const { items: categories } = useSelector((state: RootState) => state.categories)
 

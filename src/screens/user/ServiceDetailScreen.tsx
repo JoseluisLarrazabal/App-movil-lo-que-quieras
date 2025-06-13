@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { StyleSheet, View, ScrollView, Image, Dimensions, Alert } from "react-native"
 import { useSelector, useDispatch } from "react-redux"
 import { useRoute, useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
 import {
   Text,
   Button,
@@ -27,9 +29,14 @@ import { theme } from "../../theme"
 
 const { width } = Dimensions.get("window")
 
+type ServiceDetailScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'ServiceDetail'
+>;
+
 export default function ServiceDetailScreen() {
   const route = useRoute()
-  const navigation = useNavigation()
+  const navigation = useNavigation<ServiceDetailScreenNavigationProp>()
   const dispatch = useDispatch()
   const { serviceId } = route.params as { serviceId: string }
   const { items: services, selectedService } = useSelector((state: RootState) => state.services)
@@ -84,13 +91,12 @@ export default function ServiceDetailScreen() {
   }
 
   const handleContactProvider = () => {
-    navigation.navigate(
-      "Chat" as never,
-      {
-        providerId: selectedService?.provider.id,
-        providerName: selectedService?.provider.name,
-      } as never,
-    )
+    if (!selectedService) return;
+    
+    navigation.navigate("Chat", {
+      providerId: selectedService.provider.id,
+      providerName: selectedService.provider.name,
+    });
   }
 
   if (!selectedService) {

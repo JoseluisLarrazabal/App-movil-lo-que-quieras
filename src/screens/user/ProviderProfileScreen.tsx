@@ -3,14 +3,21 @@
 import { useState } from "react"
 import { StyleSheet, View, ScrollView, FlatList } from "react-native"
 import { useRoute, useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
 import { Text, Avatar, Button, Card, Title, Paragraph, Chip, Divider, List, Appbar } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
 
+type ProviderProfileScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'ProviderProfile'
+>;
+
 export default function ProviderProfileScreen() {
   const route = useRoute()
-  const navigation = useNavigation()
+  const navigation = useNavigation<ProviderProfileScreenNavigationProp>()
   const { providerId } = route.params as { providerId: string }
 
   // Mock provider data
@@ -83,17 +90,14 @@ export default function ProviderProfileScreen() {
   ])
 
   const handleContactProvider = () => {
-    navigation.navigate(
-      "Chat" as never,
-      {
-        providerId: provider.id,
-        providerName: provider.name,
-      } as never,
-    )
+    navigation.navigate("Chat", {
+      providerId: provider.id,
+      providerName: provider.name,
+    });
   }
 
   const navigateToServiceDetail = (serviceId: string) => {
-    navigation.navigate("ServiceDetail" as never, { serviceId } as never)
+    navigation.navigate("ServiceDetail", { serviceId });
   }
 
   return (

@@ -4,14 +4,18 @@ import { useState } from "react"
 import { StyleSheet, View, FlatList, Alert } from "react-native"
 import { useSelector, useDispatch } from "react-redux"
 import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
 import { Text, Card, Button, FAB, Searchbar, Menu, IconButton, Chip, Title } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import type { RootState } from "../../redux/store"
 import { deleteService } from "../../redux/slices/servicesSlice"
 import { theme } from "../../theme"
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ProviderServices">
+
 export default function ProviderServicesScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<NavigationProp>()
   const dispatch = useDispatch()
   const { items: services } = useSelector((state: RootState) => state.services)
 
@@ -28,11 +32,11 @@ export default function ProviderServicesScreen() {
   )
 
   const handleAddService = () => {
-    navigation.navigate("AddService" as never)
+    navigation.navigate("AddService", {})
   }
 
   const handleEditService = (serviceId: string) => {
-    navigation.navigate("AddService" as never, { serviceId, mode: "edit" } as never)
+    navigation.navigate("AddService", { serviceId, mode: "edit" })
     setVisibleMenu(null)
   }
 

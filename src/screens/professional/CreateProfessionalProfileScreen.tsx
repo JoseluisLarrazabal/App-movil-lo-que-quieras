@@ -1,17 +1,18 @@
-"use client"
-
 import { useState } from "react"
 import { StyleSheet, View, ScrollView, Alert } from "react-native"
 import { Text, TextInput, Button, Title, Chip } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useDispatch } from "react-redux"
-import { addProfessional } from "../../redux/slices/professionalsSlice"
+import { useDispatch, useSelector } from "react-redux"
+import { createProfessionalProfile } from "../../redux/slices/professionalsSlice"
 import { theme } from "../../theme"
 import { useNavigation } from "@react-navigation/native"
+import type { RootState } from "../../redux/store"
+import type { AppDispatch } from "../../redux/store"
 
 export default function CreateProfessionalProfileScreen() {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const navigation = useNavigation()
+  const { status, error } = useSelector((state: RootState) => state.professionals)  
 
   // Campos de formulario
   const [name, setName] = useState("")
@@ -24,39 +25,43 @@ export default function CreateProfessionalProfileScreen() {
   const [rate, setRate] = useState("")
   const [availability, setAvailability] = useState<"full-time" | "part-time" | "freelance" | "contract">("full-time")
   const [skills, setSkills] = useState("")
-  
-  function handleSubmit() {
+
+  const handleSubmit = async () => {
     if (!name || !profession || !phone || !city)
       return Alert.alert("Error", "Completa todos los campos obligatorios")
 
-    dispatch(addProfessional({
-      id: Date.now().toString(),
-      user: { name, avatar },
-      profession,
-      specialties: specialties.split(",").map(s => s.trim()).filter(Boolean),
-      experience: { years: Number(experienceYears) },
-      rating: 0,
-      reviewsCount: 0,
-      projectsCompleted: 0,
-      rates: { hourly: Number(rate) },
-      workLocation: { city },
-      availability: { type: availability, remote: false },
-      contactInfo: { phone },
-      skills: skills.split(",").map(s => s.trim()).filter(Boolean),
-      verified: false,
-      isActive: true,
-      responseTime: "<24 horas"
-    }))
-    Alert.alert("¡Listo!", "Perfil creado correctamente", [
-      { text: "Ir a Profesionales", onPress: () => navigation.goBack() }
-    ])
+    try {
+      await dispatch(createProfessionalProfile({
+        user: { name, avatar },
+        profession,
+        specialties: specialties.split(",").map(s => s.trim()).filter(Boolean),
+        experience: { years: Number(experienceYears) },
+        rating: 0,
+        reviewsCount: 0,
+        projectsCompleted: 0,
+        rates: { hourly: Number(rate) },
+        workLocation: { city },
+        availability: { type: availability, remote: false },
+        contactInfo: { phone },
+        skills: skills.split(",").map(s => s.trim()).filter(Boolean),
+        verified: false,
+        isActive: true,
+        responseTime: "<24 horas"
+      })).unwrap()
+
+      Alert.alert("¡Listo!", "Perfil creado correctamente", [
+        { text: "Ir a Profesionales", onPress: () => navigation.goBack() }
+      ])
+    } catch (e: any) {
+      Alert.alert("Error", e || "Error al crear perfil profesional")
+    }
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Title style={styles.title}>Crear Perfil Profesional</Title>
-        
+
         <TextInput
           label="Nombre completo"
           value={name}
@@ -121,16 +126,16 @@ export default function CreateProfessionalProfileScreen() {
         />
         <Text style={styles.label}>Disponibilidad:</Text>
         <View style={styles.chipContainer}>
-          {["full-time","part-time","freelance","contract"].map(opt => (
+          {["full-time", "part-time", "freelance", "contract"].map(opt => (
             <Chip key={opt}
-              selected={availability===opt}
-              onPress={()=>setAvailability(opt as any)}
+              selected={availability === opt}
+              onPress={() => setAvailability(opt as any)}
               style={styles.chip}
             >{{
-              "full-time":"Tiempo completo",
-              "part-time":"Medio tiempo",
-              "freelance":"Freelance",
-              "contract":"Por proyecto"
+              "full-time": "Tiempo completo",
+              "part-time": "Medio tiempo",
+              "freelance": "Freelance",
+              "contract": "Por proyecto"
             }[opt]}</Chip>
           ))}
         </View>
@@ -147,9 +152,17 @@ export default function CreateProfessionalProfileScreen() {
           mode="contained"
           style={styles.submitButton}
           onPress={handleSubmit}
+          loading={status === "loading"}
+          disabled={status === "loading"}
         >
           Publicar Perfil
         </Button>
+        
+        {error && (
+          <Text style={{ color: "red", textAlign: "center", marginBottom: 8 }}>
+            {error}
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   )

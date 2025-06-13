@@ -172,7 +172,6 @@ export default function ChatScreen() {
                 icon="send"
                 onPress={sendMessage}
                 disabled={!message.trim()}
-                iconColor={message.trim() ? theme.colors.primary : theme.colors.disabled}
               />
             }
             left={<TextInput.Icon icon="attachment" onPress={() => {}} />}

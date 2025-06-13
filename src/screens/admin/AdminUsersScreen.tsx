@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import { StyleSheet, View, FlatList } from "react-native"
 import { Text, Card, Avatar, Searchbar, SegmentedButtons, Menu, IconButton, Chip, Title } from "react-native-paper"
