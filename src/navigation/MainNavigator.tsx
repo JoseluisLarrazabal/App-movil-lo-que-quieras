@@ -16,6 +16,7 @@ import CreateProfessionalProfileScreen from "../screens/professional/CreateProfe
 // Navigators
 import UserNavigator from "./UserNavigator"
 import ProviderNavigator from "./ProviderNavigator"
+import AdminNavigator from "./AdminNavigator"
 
 // Additional Screens
 import ServiceDetailScreen from "../screens/shared/ServiceDetailScreen"
@@ -50,6 +51,8 @@ export default function MainNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
+      ) : currentUser.role === "admin" ? (
+        <Stack.Screen name="AdminTabs" component={AdminNavigator} />
       ) : currentUser.role === "provider" && !hasProfessionalProfile ? (
         // Obliga a crear perfil profesional antes de otra cosa
         <Stack.Screen name="CreateProfessionalProfile" component={CreateProfessionalProfileScreen} />

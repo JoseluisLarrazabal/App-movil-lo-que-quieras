@@ -19,9 +19,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context"
 import type { RootState } from "../../redux/store"
 import { theme } from "../../theme"
+import { createCategory, updateCategory, deleteCategory, fetchCategories } from "../../redux/slices/categoriesSlice"
+import type { AppDispatch } from "../../redux/store"
 
 export default function AdminCategoriesScreen() {
-  const dispatch = useDispatch()
+  const dispatch: AppDispatch = useDispatch()
   const { items: categories } = useSelector((state: RootState) => state.categories)
 
   const [searchQuery, setSearchQuery] = useState("")
@@ -64,31 +66,31 @@ export default function AdminCategoriesScreen() {
         {
           text: "Eliminar",
           style: "destructive",
-          onPress: () => {
-            // Dispatch delete action
+          onPress: async () => {
+            await dispatch(deleteCategory(categoryId))
             setVisibleMenu(null)
+            dispatch(fetchCategories())
           },
         },
       ],
     )
   }
 
-  const handleSaveCategory = () => {
+  const handleSaveCategory = async () => {
     if (!categoryName || !categoryIcon) {
       Alert.alert("Error", "Por favor completa todos los campos")
       return
     }
 
     if (editingCategory) {
-      // Update existing category
-      console.log("Updating category:", editingCategory.id)
+      await dispatch(updateCategory({ id: editingCategory._id, data: { name: categoryName, icon: categoryIcon, color: categoryColor } }))
+      Alert.alert("Éxito", "Categoría actualizada")
     } else {
-      // Add new category
-      console.log("Adding new category")
+      await dispatch(createCategory({ name: categoryName, icon: categoryIcon, color: categoryColor }))
+      Alert.alert("Éxito", "Categoría creada")
     }
-
     setShowAddModal(false)
-    Alert.alert("Éxito", editingCategory ? "Categoría actualizada" : "Categoría creada")
+    dispatch(fetchCategories())
   }
 
   const colorOptions = ["#E3F2FD", "#F3E5F5", "#E8F5E8", "#FFF3E0", "#FCE4EC", "#F1F8E9", "#FFF8E1", "#E0F2F1"]
@@ -106,12 +108,12 @@ export default function AdminCategoriesScreen() {
           </View>
 
           <Menu
-            visible={visibleMenu === item.id}
+            visible={visibleMenu === item._id}
             onDismiss={() => setVisibleMenu(null)}
-            anchor={<IconButton icon="dots-vertical" onPress={() => setVisibleMenu(item.id)} />}
+            anchor={<IconButton icon="dots-vertical" onPress={() => setVisibleMenu(item._id)} />}
           >
             <Menu.Item onPress={() => handleEditCategory(item)} title="Editar" leadingIcon="pencil" />
-            <Menu.Item onPress={() => handleDeleteCategory(item.id)} title="Eliminar" leadingIcon="delete" />
+            <Menu.Item onPress={() => handleDeleteCategory(item._id)} title="Eliminar" leadingIcon="delete" />
           </Menu>
         </View>
 
@@ -151,7 +153,7 @@ export default function AdminCategoriesScreen() {
 
       <FlatList
         data={filteredCategories}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={renderCategoryItem}
         contentContainerStyle={styles.categoriesList}
         showsVerticalScrollIndicator={false}
