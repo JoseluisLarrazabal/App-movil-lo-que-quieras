@@ -95,6 +95,7 @@ const serviceSeeds = async (categories, providers) => {
 };
 
 const healthFacilities = [
+  // Cochabamba
   {
     name: 'Hospital Viedma',
     type: 'hospital',
@@ -124,6 +125,80 @@ const healthFacilities = [
     contact: { phone: '4466666' },
     openingHours: '8:00-22:00',
     services: ['Medicamentos', 'Vacunas']
+  },
+  // La Paz
+  {
+    name: 'Hospital Obrero N°1',
+    type: 'hospital',
+    address: 'Av. 6 de Agosto N° 2577',
+    city: 'La Paz',
+    location: { lat: -16.5091, lng: -68.1193 },
+    contact: { phone: '2222333' },
+    openingHours: '24h',
+    services: ['Emergencias', 'Traumatología', 'Cardiología']
+  },
+  {
+    name: 'Farmacia Chávez',
+    type: 'pharmacy',
+    address: 'Av. 16 de Julio N° 1234',
+    city: 'La Paz',
+    location: { lat: -16.5005, lng: -68.1301 },
+    contact: { phone: '2244555' },
+    openingHours: '7:00-23:00',
+    services: ['Medicamentos', 'Dermocosmética']
+  },
+  // Santa Cruz
+  {
+    name: 'Clínica Foianini',
+    type: 'clinic',
+    address: 'Av. Irala N° 468',
+    city: 'Santa Cruz',
+    location: { lat: -17.7863, lng: -63.1812 },
+    contact: { phone: '3333222' },
+    openingHours: '24h',
+    services: ['Consulta general', 'Emergencias', 'Laboratorio']
+  },
+  // Buenos Aires
+  {
+    name: 'Hospital Italiano',
+    type: 'hospital',
+    address: 'Perón 4190',
+    city: 'Buenos Aires',
+    location: { lat: -34.6103, lng: -58.4108 },
+    contact: { phone: '+54 11 4959-0200' },
+    openingHours: '24h',
+    services: ['Emergencias', 'Cirugía', 'Pediatría', 'Oncología']
+  },
+  {
+    name: 'Farmacity Palermo',
+    type: 'pharmacy',
+    address: 'Av. Santa Fe 3253',
+    city: 'Buenos Aires',
+    location: { lat: -34.5875, lng: -58.4206 },
+    contact: { phone: '+54 11 4821-1111' },
+    openingHours: '8:00-22:00',
+    services: ['Medicamentos', 'Perfumería']
+  },
+  // Ejemplo laboratorio/dentista
+  {
+    name: 'Laboratorio Lister',
+    type: 'laboratory',
+    address: 'Av. América N° 123',
+    city: 'Cochabamba',
+    location: { lat: -17.3840, lng: -66.1530 },
+    contact: { phone: '4477888' },
+    openingHours: '7:00-19:00',
+    services: ['Análisis clínicos', 'Pruebas COVID']
+  },
+  {
+    name: 'Dentista Sonrisa Feliz',
+    type: 'dentist',
+    address: 'C. Aroma N° 456',
+    city: 'Santa Cruz',
+    location: { lat: -17.7820, lng: -63.1800 },
+    contact: { phone: '3344556' },
+    openingHours: '9:00-18:00',
+    services: ['Odontología general', 'Ortodoncia']
   }
 ];
 

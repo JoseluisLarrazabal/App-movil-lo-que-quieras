@@ -8,6 +8,7 @@ import SearchScreen from "../screens/user/SearchScreen"
 import ProfessionalSearchScreen from "../screens/professional/ProfessionalSearchScreen"
 import BookingsScreen from "../screens/user/BookingsScreen"
 import ProfileScreen from "../screens/user/ProfileScreen"
+import HealthMapScreen from '../screens/health/HealthMapScreen'
 
 const Tab = createBottomTabNavigator()
 
@@ -78,6 +79,16 @@ export default function UserNavigator() {
           tabBarLabel: "Perfil",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="account" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Health"
+        component={HealthMapScreen}
+        options={{
+          tabBarLabel: "Salud",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="hospital-building" size={size} color={color} />
           ),
         }}
       />
