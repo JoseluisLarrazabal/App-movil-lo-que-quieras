@@ -5,11 +5,24 @@ import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootStackParamList } from "../../navigation/types"
 import { theme } from "../../theme"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState, AppDispatch } from "../../redux/store"
+import { fetchServices } from "../../redux/slices/servicesSlice"
+import { useEffect } from "react"
 
 type ProviderHomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
 
 export default function ProviderHomeScreen() {
   const navigation = useNavigation<ProviderHomeScreenNavigationProp>()
+  const dispatch: AppDispatch = useDispatch()
+  const { items: services } = useSelector((state: RootState) => state.services)
+
+  useEffect(() => {
+    dispatch(fetchServices({ status: "active" }))
+  }, [dispatch])
+
+  const activeServices = services.filter(s => s.isActive !== false)
+  const avgRating = activeServices.length > 0 ? (activeServices.reduce((acc, s) => acc + (s.rating || 0), 0) / activeServices.length).toFixed(1) : "-"
 
   return (
     <SafeAreaView style={styles.container}>
@@ -24,13 +37,13 @@ export default function ProviderHomeScreen() {
         <View style={styles.statsContainer}>
           <Card style={styles.statsCard}>
             <Card.Content>
-              <Text style={styles.statsNumber}>12</Text>
-              <Text style={styles.statsLabel}>Reservas activas</Text>
+              <Text style={styles.statsNumber}>{activeServices.length}</Text>
+              <Text style={styles.statsLabel}>Servicios activos</Text>
             </Card.Content>
           </Card>
           <Card style={styles.statsCard}>
             <Card.Content>
-              <Text style={styles.statsNumber}>4.8</Text>
+              <Text style={styles.statsNumber}>{avgRating}</Text>
               <Text style={styles.statsLabel}>Rating promedio</Text>
             </Card.Content>
           </Card>

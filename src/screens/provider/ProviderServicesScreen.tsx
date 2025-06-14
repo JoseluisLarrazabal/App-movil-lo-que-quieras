@@ -12,12 +12,16 @@ import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
 interface Service {
-  id: string
-  name: string
-  description: string
-  price: number
-  duration: number
-  category: string
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  duration?: number;
+  category: {
+    id: string;
+    name: string;
+  };
+  isActive?: boolean;
 }
 
 export default function ProviderServicesScreen() {
@@ -26,7 +30,7 @@ export default function ProviderServicesScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>()
 
   useEffect(() => {
-    dispatch(fetchServices())
+    dispatch(fetchServices({ status: "active" }))
   }, [dispatch])
 
   const handleDeleteService = async (id: string) => {
@@ -69,7 +73,7 @@ export default function ProviderServicesScreen() {
               <Text style={styles.serviceDescription}>{service.description}</Text>
               <View style={styles.serviceDetails}>
                 <Text style={styles.servicePrice}>${service.price}</Text>
-                <Text style={styles.serviceDuration}>{(service as any).duration ?? 0} min</Text>
+                <Text style={styles.serviceDuration}>{service.duration ?? 0} min</Text>
               </View>
             </Card.Content>
             <Card.Actions>

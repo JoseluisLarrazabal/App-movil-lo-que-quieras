@@ -33,9 +33,13 @@ export default function SearchScreen() {
 
   useEffect(() => {
     if (servicesStatus === "idle") {
-      dispatch(fetchServices())
+      dispatch(fetchServices({ status: "active" }))
     }
   }, [dispatch, servicesStatus])
+
+  useEffect(() => {
+    setFilteredServices(services.filter(s => s.isActive !== false))
+  }, [services])
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
@@ -44,13 +48,14 @@ export default function SearchScreen() {
       dispatch(addSearch(query))
       const filtered = services.filter(
         (service) =>
-          service.title.toLowerCase().includes(query.toLowerCase()) ||
-          service.description.toLowerCase().includes(query.toLowerCase()) ||
-          service.category.name.toLowerCase().includes(query.toLowerCase()),
+          service.isActive !== false &&
+          (service.title.toLowerCase().includes(query.toLowerCase()) ||
+            service.description.toLowerCase().includes(query.toLowerCase()) ||
+            service.category.name.toLowerCase().includes(query.toLowerCase())),
       )
       setFilteredServices(filtered)
     } else {
-      setFilteredServices(services)
+      setFilteredServices(services.filter(s => s.isActive !== false))
     }
   }
 

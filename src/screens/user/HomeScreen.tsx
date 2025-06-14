@@ -21,7 +21,8 @@ export default function HomeScreen() {
   const dispatch = useDispatch<AppDispatch>()
   const { currentUser } = useContext(AuthContext)
   const { items: categories } = useSelector((state: RootState) => state.categories)
-  const { popularServices } = useSelector((state: RootState) => state.services)
+  const { popularServices, items: allServices } = useSelector((state: RootState) => state.services)
+  const popularActiveServices = popularServices.filter(s => s.isActive !== false)
 
   const navigateToSearch = () => {
     navigation.navigate("Search" as never)
@@ -35,7 +36,7 @@ export default function HomeScreen() {
   }
 
   useEffect(() => {
-    dispatch(fetchServices())
+    dispatch(fetchServices({ status: "active" }))
     dispatch(fetchCategories())
   }, [dispatch])
 
@@ -184,7 +185,7 @@ export default function HomeScreen() {
             </Button>
           </View>
           <FlatList
-            data={popularServices}
+            data={popularActiveServices}
             keyExtractor={(item) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
