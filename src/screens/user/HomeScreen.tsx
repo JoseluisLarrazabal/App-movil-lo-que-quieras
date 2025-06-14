@@ -12,6 +12,7 @@ import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
 import CategoryButton from "../../components/CategoryButton"
 import { fetchServices } from "../../redux/slices/servicesSlice"
+import { fetchCategories } from "../../redux/slices/categoriesSlice"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootStackParamList } from "../../navigation/types"
 
@@ -35,6 +36,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     dispatch(fetchServices())
+    dispatch(fetchCategories())
   }, [dispatch])
 
   return (
