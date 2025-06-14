@@ -51,7 +51,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
 });
 
 // Obtener todos los usuarios (solo admin)
-router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
+router.get('/', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  console.log('--- /api/users endpoint hit ---');
   try {
     const users = await User.find({}).select('-password');
     
@@ -68,7 +69,7 @@ router.get('/', authenticateToken, authorizeRoles(['admin']), async (req, res) =
 });
 
 // Obtener usuario por ID (solo admin)
-router.get('/:id', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
+router.get('/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
     
@@ -88,7 +89,7 @@ router.get('/:id', authenticateToken, authorizeRoles(['admin']), async (req, res
 });
 
 // Actualizar estado de usuario (solo admin)
-router.patch('/:id/status', authenticateToken, authorizeRoles(['admin']), async (req, res) => {
+router.patch('/:id/status', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   try {
     const { isActive } = req.body;
     

@@ -6,60 +6,27 @@ import { StyleSheet, View, FlatList } from "react-native"
 import { Text, Card, Avatar, Searchbar, SegmentedButtons, Menu, IconButton, Chip, Title } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { theme } from "../../theme"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState, AppDispatch } from "../../redux/store"
+import { fetchUsers, updateUser, changeUserStatus, deleteUser } from "../../redux/slices/usersSlice"
+import { useContext } from "react"
+import { AuthContext } from "../../context/AuthContext"
+import { useNavigation } from "@react-navigation/native"
 
 export default function AdminUsersScreen() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTab, setSelectedTab] = useState("all")
   const [visibleMenu, setVisibleMenu] = useState<string | null>(null)
 
-  // Mock users data
-  const [users] = useState([
-    {
-      id: "1",
-      name: "María García",
-      email: "maria@email.com",
-      role: "user",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-      status: "active",
-      joinDate: "2023-01-15",
-      totalBookings: 12,
-      totalSpent: 2400,
-    },
-    {
-      id: "2",
-      name: "Juan Pérez",
-      email: "juan@email.com",
-      role: "provider",
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-      status: "active",
-      joinDate: "2023-02-20",
-      totalServices: 8,
-      totalEarnings: 5600,
-      rating: 4.8,
-    },
-    {
-      id: "3",
-      name: "Ana López",
-      email: "ana@email.com",
-      role: "user",
-      avatar: "https://randomuser.me/api/portraits/women/68.jpg",
-      status: "suspended",
-      joinDate: "2023-03-10",
-      totalBookings: 3,
-      totalSpent: 450,
-    },
-    {
-      id: "4",
-      name: "Carlos Rodríguez",
-      email: "carlos@email.com",
-      role: "provider",
-      avatar: "https://randomuser.me/api/portraits/men/45.jpg",
-      status: "pending",
-      joinDate: "2023-06-01",
-      totalServices: 0,
-      totalEarnings: 0,
-    },
-  ])
+  const dispatch: AppDispatch = useDispatch()
+  const { items: users, status, error } = useSelector((state: RootState) => state.users)
+  const { signOut } = useContext(AuthContext)
+  const navigation = useNavigation<any>()
+
+  // Cargar usuarios al montar
+  React.useEffect(() => {
+    dispatch(fetchUsers())
+  }, [dispatch])
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -74,9 +41,24 @@ export default function AdminUsersScreen() {
     return matchesSearch
   })
 
-  const handleUserAction = (userId: string, action: string) => {
-    console.log(`Action ${action} for user ${userId}`)
+  const handleUserAction = async (userId: string, action: string) => {
     setVisibleMenu(null)
+    const user = users.find(u => u._id === userId)
+    if (!user) return
+    if (action === "suspend") {
+      await dispatch(changeUserStatus({ id: userId, isActive: false }))
+      dispatch(fetchUsers())
+    } else if (action === "activate") {
+      await dispatch(changeUserStatus({ id: userId, isActive: true }))
+      dispatch(fetchUsers())
+    } else if (action === "delete") {
+      await dispatch(deleteUser(userId))
+      dispatch(fetchUsers())
+    } else if (action === "edit") {
+      // Aquí podrías abrir un modal para editar el usuario
+    } else if (action === "view") {
+      // Aquí podrías navegar a una pantalla de detalle
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -118,6 +100,11 @@ export default function AdminUsersScreen() {
     }
   }
 
+  const handleLogout = async () => {
+    await signOut()
+    navigation.reset({ index: 0, routes: [{ name: "Login" }] })
+  }
+
   const renderUserItem = ({ item }: { item: any }) => (
     <Card style={styles.userCard}>
       <Card.Content>
@@ -140,26 +127,26 @@ export default function AdminUsersScreen() {
           </View>
 
           <Menu
-            visible={visibleMenu === item.id}
+            visible={visibleMenu === item._id}
             onDismiss={() => setVisibleMenu(null)}
-            anchor={<IconButton icon="dots-vertical" onPress={() => setVisibleMenu(item.id)} />}
+            anchor={<IconButton icon="dots-vertical" onPress={() => setVisibleMenu(item._id)} />}
           >
-            <Menu.Item onPress={() => handleUserAction(item.id, "view")} title="Ver perfil" leadingIcon="account" />
-            <Menu.Item onPress={() => handleUserAction(item.id, "edit")} title="Editar" leadingIcon="pencil" />
+            <Menu.Item onPress={() => handleUserAction(item._id, "view")} title="Ver perfil" leadingIcon="account" />
+            <Menu.Item onPress={() => handleUserAction(item._id, "edit")} title="Editar" leadingIcon="pencil" />
             {item.status === "active" ? (
               <Menu.Item
-                onPress={() => handleUserAction(item.id, "suspend")}
+                onPress={() => handleUserAction(item._id, "suspend")}
                 title="Suspender"
                 leadingIcon="block-helper"
               />
             ) : (
               <Menu.Item
-                onPress={() => handleUserAction(item.id, "activate")}
+                onPress={() => handleUserAction(item._id, "activate")}
                 title="Activar"
                 leadingIcon="check-circle"
               />
             )}
-            <Menu.Item onPress={() => handleUserAction(item.id, "delete")} title="Eliminar" leadingIcon="delete" />
+            <Menu.Item onPress={() => handleUserAction(item._id, "delete")} title="Eliminar" leadingIcon="delete" />
           </Menu>
         </View>
 
@@ -207,6 +194,9 @@ export default function AdminUsersScreen() {
       <View style={styles.header}>
         <Title style={styles.headerTitle}>Gestión de Usuarios</Title>
         <Text style={styles.headerSubtitle}>{filteredUsers.length} usuarios</Text>
+        <View style={{ position: "absolute", right: 16, top: 20 }}>
+          <IconButton icon="logout" onPress={handleLogout} accessibilityLabel="Cerrar sesión" />
+        </View>
       </View>
 
       <View style={styles.searchContainer}>
@@ -234,7 +224,7 @@ export default function AdminUsersScreen() {
 
       <FlatList
         data={filteredUsers}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={renderUserItem}
         contentContainerStyle={styles.usersList}
         showsVerticalScrollIndicator={false}

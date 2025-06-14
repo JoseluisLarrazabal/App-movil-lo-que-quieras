@@ -22,6 +22,10 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    console.log('Decoded JWT:', decoded);
+    console.log('User found:', user);
+    console.log('User role:', user?.role);
+
     req.user = user;
     next();
   } catch (error) {
@@ -41,6 +45,9 @@ const authenticateToken = async (req, res, next) => {
 // Middleware para verificar roles
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
+    console.log('Roles permitidos:', roles);
+    console.log('Rol del usuario:', req.user.role, '|', typeof req.user.role);
+    console.log('Comparación:', roles.includes(req.user.role));
     if (!req.user) {
       return res.status(401).json({ 
         message: 'Usuario no autenticado' 
