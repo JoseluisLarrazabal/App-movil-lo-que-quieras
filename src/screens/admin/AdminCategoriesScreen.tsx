@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { StyleSheet, View, FlatList, Alert } from "react-native"
 import { useSelector, useDispatch } from "react-redux"
 import {
@@ -22,6 +22,20 @@ import { theme } from "../../theme"
 import { createCategory, updateCategory, deleteCategory, fetchCategories } from "../../redux/slices/categoriesSlice"
 import type { AppDispatch } from "../../redux/store"
 
+// Copia de iconMap de CategoryButton
+const iconMap: Record<string, string> = {
+  broom: "🧹",
+  wrench: "🔧",
+  "lightning-bolt": "⚡",
+  hammer: "🔨",
+  tree: "🌱",
+  brush: "🎨",
+  car: "🚗",
+  laptop: "💻",
+  heart: "❤️",
+  school: "🏫",
+}
+
 export default function AdminCategoriesScreen() {
   const dispatch: AppDispatch = useDispatch()
   const { items: categories } = useSelector((state: RootState) => state.categories)
@@ -35,6 +49,10 @@ export default function AdminCategoriesScreen() {
   const [categoryName, setCategoryName] = useState("")
   const [categoryIcon, setCategoryIcon] = useState("")
   const [categoryColor, setCategoryColor] = useState("#E3F2FD")
+
+  useEffect(() => {
+    dispatch(fetchCategories())
+  }, [dispatch])
 
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -100,7 +118,7 @@ export default function AdminCategoriesScreen() {
       <Card.Content>
         <View style={styles.categoryHeader}>
           <View style={[styles.categoryIcon, { backgroundColor: item.color }]}>
-            <Text style={styles.iconText}>{item.icon}</Text>
+            <Text style={styles.iconText}>{iconMap[item.icon] || "❓"}</Text>
           </View>
           <View style={styles.categoryInfo}>
             <Text style={styles.categoryName}>{item.name}</Text>

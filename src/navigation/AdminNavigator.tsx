@@ -6,6 +6,7 @@ import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen"
 import AdminUsersScreen from "../screens/admin/AdminUsersScreen"
 import AdminCategoriesScreen from "../screens/admin/AdminCategoriesScreen"
 import AdminReportsScreen from "../screens/admin/AdminReportsScreen"
+import AdminServicesScreen from "../screens/admin/AdminServicesScreen"
 
 const Tab = createBottomTabNavigator()
 
@@ -62,6 +63,16 @@ export default function AdminNavigator() {
           tabBarLabel: "Reportes",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chart-bar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="AdminServices"
+        component={AdminServicesScreen}
+        options={{
+          tabBarLabel: "Servicios",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="briefcase" size={size} color={color} />
           ),
         }}
       />
