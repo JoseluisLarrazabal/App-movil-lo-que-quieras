@@ -4,6 +4,8 @@ const Category = require('../models/Category');
 const Service = require('../models/Service');
 const { seedCategories } = require('./categories');
 const bcrypt = require('bcryptjs');
+const HealthFacility = require('../models/HealthFacility');
+const Professional = require('../models/Professionals');
 require('dotenv').config();
 
 // NUEVO: Seed de usuarios providers
@@ -92,6 +94,95 @@ const serviceSeeds = async (categories, providers) => {
   console.log(`✅ ${createdServices.length} servicios creados exitosamente`);
 };
 
+const healthFacilities = [
+  {
+    name: 'Hospital Viedma',
+    type: 'hospital',
+    address: 'Av. Aniceto Arce N° 100',
+    city: 'Cochabamba',
+    location: { lat: -17.3895, lng: -66.1568 },
+    contact: { phone: '4444444' },
+    openingHours: '24h',
+    services: ['Emergencias', 'Cirugía', 'Pediatría']
+  },
+  {
+    name: 'Clínica Los Ángeles',
+    type: 'clinic',
+    address: 'C. Sucre N° 200',
+    city: 'Cochabamba',
+    location: { lat: -17.3932, lng: -66.1571 },
+    contact: { phone: '4455555' },
+    openingHours: '24h',
+    services: ['Consulta general', 'Laboratorio']
+  },
+  {
+    name: 'Farmacia Bolivia',
+    type: 'pharmacy',
+    address: 'Av. Ayacucho N° 300',
+    city: 'Cochabamba',
+    location: { lat: -17.3910, lng: -66.1550 },
+    contact: { phone: '4466666' },
+    openingHours: '8:00-22:00',
+    services: ['Medicamentos', 'Vacunas']
+  }
+];
+
+// NUEVO: Seed de profesionales
+const professionalSeeds = async (providers) => {
+  // Borra todos los profesionales existentes
+  await Professional.deleteMany({});
+
+  // Crea un perfil profesional para cada provider de ejemplo
+  const professionals = [
+    {
+      user: providers[0]._id,
+      profession: 'Electricista',
+      specialties: ['Instalaciones eléctricas', 'Reparaciones'],
+      experience: { years: 5, description: 'Experiencia en instalaciones residenciales y comerciales.' },
+      certifications: [],
+      education: [],
+      availability: { type: 'full-time', remote: false },
+      workLocation: { city: 'Buenos Aires', address: 'CABA', radius: 30 },
+      contactInfo: { phone: '+54 11 1234-5678', whatsapp: '+54 11 1234-5678', email: providers[0].email },
+      portfolio: [],
+      rates: { hourly: 1500, daily: 10000, currency: 'ARS' },
+      skills: ['Electricidad', 'Mantenimiento'],
+      tools: ['Tester', 'Pinza'],
+      rating: 4.7,
+      reviewsCount: 12,
+      projectsCompleted: 30,
+      responseTime: '< 2 horas',
+      isActive: true,
+      isPremium: false,
+      verified: true
+    },
+    {
+      user: providers[1]._id,
+      profession: 'Plomero',
+      specialties: ['Reparación de cañerías', 'Instalación de sanitarios'],
+      experience: { years: 8, description: 'Plomería general y de emergencia.' },
+      certifications: [],
+      education: [],
+      availability: { type: 'freelance', remote: false },
+      workLocation: { city: 'Buenos Aires', address: 'CABA', radius: 20 },
+      contactInfo: { phone: '+54 11 9876-5432', whatsapp: '+54 11 9876-5432', email: providers[1].email },
+      portfolio: [],
+      rates: { hourly: 1800, daily: 12000, currency: 'ARS' },
+      skills: ['Plomería', 'Emergencias'],
+      tools: ['Llave inglesa', 'Soplete'],
+      rating: 4.9,
+      reviewsCount: 20,
+      projectsCompleted: 50,
+      responseTime: '< 1 hora',
+      isActive: true,
+      isPremium: false,
+      verified: true
+    }
+  ];
+  const createdProfessionals = await Professional.insertMany(professionals);
+  console.log(`✅ ${createdProfessionals.length} perfiles profesionales creados exitosamente`);
+};
+
 const seedData = async () => {
   try {
     console.log('🚀 Iniciando proceso de seeding...');
@@ -109,8 +200,16 @@ const seedData = async () => {
     const createdProviders = await User.insertMany(providerUsers);
     console.log(`✅ ${createdProviders.length} proveedores creados exitosamente`);
 
+    // Sembrar perfiles profesionales
+    await professionalSeeds(createdProviders);
+
     // Sembrar servicios
     await serviceSeeds(categories, createdProviders);
+
+    // Sembrar establecimientos de salud
+    await HealthFacility.deleteMany({});
+    await HealthFacility.insertMany(healthFacilities);
+    console.log(`✅ ${healthFacilities.length} establecimientos de salud creados exitosamente`);
 
     console.log('🎉 Proceso de seeding completado exitosamente');
   } catch (error) {

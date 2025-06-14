@@ -51,7 +51,7 @@ export default function ProfessionalSearchScreen() {
     // Filtro por disponibilidad
     if (availabilityFilter !== "all") {
       filtered = filtered.filter(
-        professional => professional.availability.type === availabilityFilter
+        professional => professional.availability && professional.availability.type === availabilityFilter
       );
     }
 
@@ -61,7 +61,7 @@ export default function ProfessionalSearchScreen() {
       filtered = filtered.filter(professional =>
         normalize(professional.user.name).includes(query) ||
         normalize(professional.profession).includes(query) ||
-        professional.specialties.some(specialty => normalize(specialty).includes(query))
+        (Array.isArray(professional.specialties) && professional.specialties.some(specialty => normalize(specialty).includes(query)))
       );
       // Si hay filtro de profesión, lo aplicamos también pero de forma tolerante
       if (filters.profession) {
@@ -80,8 +80,14 @@ export default function ProfessionalSearchScreen() {
 
     filtered.sort((a, b) => b.rating - a.rating);
 
-    console.log("✅ Filtered results:", filtered.length)
-    return filtered;
+    // Filtrar los que tengan todos los campos requeridos
+    return filtered.filter(p =>
+      p.user && typeof p.user.name === 'string' && typeof p.user.avatar === 'string' &&
+      Array.isArray(p.specialties) &&
+      p.experience && typeof p.experience.years === 'number' &&
+      p.availability && typeof p.availability.type === 'string' &&
+      p.workLocation && typeof p.workLocation.city === 'string'
+    );
   }, [searchQuery, filters.profession, availabilityFilter, professionals]);
 
   const handleProfessionSelect = (profession: string) => {

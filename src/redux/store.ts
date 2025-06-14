@@ -6,6 +6,7 @@ import bookingsReducer from "./slices/bookingsSlice"
 import searchHistoryReducer from "./slices/searchHistorySlice"
 import professionalsReducer from "./slices/professionalsSlice"
 import usersReducer from "./slices/usersSlice"
+import healthFacilitiesReducer from "./slices/healthFacilitiesSlice"
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     searchHistory: searchHistoryReducer,
     professionals: professionalsReducer, 
     users: usersReducer,
+    healthFacilities: healthFacilitiesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
