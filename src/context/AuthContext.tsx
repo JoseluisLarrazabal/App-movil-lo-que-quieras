@@ -52,13 +52,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const parsedUser = JSON.parse(storedUser) as User
         setCurrentUser(parsedUser)
         setUserRole(parsedUser.role)
-        
         // Verificar si el provider tiene perfil profesional
         if (parsedUser.role === 'provider') {
           try {
             const res = await api.get(`/professionals/search?userId=${parsedUser.id}`)
             setHasProfessionalProfile(res.data?.professionals?.length > 0)
-          } catch {
+          } catch (e) {
+            // Si hay error, asumimos que NO tiene perfil profesional, pero NO deslogueamos
             setHasProfessionalProfile(false)
           }
         } else {
@@ -75,34 +75,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true)
-
       // Hacer request real al backend
       const response = await api.post('/auth/login', {
         email,
         password
       })
-
       console.log("LOGIN RESPONSE:", response.data);
-
       const { user, tokens } = response.data
-
       // Guardar tokens y usuario
       await AsyncStorage.setItem("@LoQueQuieras:user", JSON.stringify(user))
       await AsyncStorage.setItem("@LoQueQuieras:token", tokens.accessToken)
       await AsyncStorage.setItem("@LoQueQuieras:refreshToken", tokens.refreshToken)
-      
-      const test = await AsyncStorage.getItem("@LoQueQuieras:token")
-      console.log("TOKEN TRAS GUARDAR:", test)
-
       setCurrentUser(user)
       setUserRole(user.role)
-      
       // Verificar si el provider tiene perfil profesional
       if (user.role === "provider") {
         try {
           const res = await api.get(`/professionals/search?userId=${user.id}`)
           setHasProfessionalProfile(res.data?.professionals?.length > 0)
-        } catch {
+        } catch (e) {
+          // Si hay error, asumimos que NO tiene perfil profesional, pero NO deslogueamos
           setHasProfessionalProfile(false)
         }
       } else {
@@ -110,11 +102,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error: any) {
       console.log("Error signing in", error)
-      
       // Manejar errores específicos
       if (error.response?.status === 401) {
         throw new Error("Email o contraseña incorrectos")
       } else if (error.response?.status === 403 && error.response?.data?.requiresProfessionalProfile) {
+        // NO desloguear, solo mostrar mensaje y dejar que la navegación lo lleve a crear perfil
         throw new Error("Debes crear tu perfil profesional antes de poder acceder")
       } else if (error.response?.data?.message) {
         throw new Error(error.response.data.message)

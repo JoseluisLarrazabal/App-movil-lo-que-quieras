@@ -18,7 +18,7 @@ export default function CreateProfessionalProfileScreen() {
   const dispatch = useDispatch<AppDispatch>()
   const navigation = useNavigation<CreateProfessionalProfileScreenNavigationProp>()
   const { status, error } = useSelector((state: RootState) => state.professionals)
-  const { setHasProfessionalProfile } = useContext(AuthContext)
+  const { setHasProfessionalProfile, signOut } = useContext(AuthContext)
 
   // Campos de formulario
   const [name, setName] = useState("")
@@ -182,7 +182,22 @@ export default function CreateProfessionalProfileScreen() {
         >
           Publicar Perfil
         </Button>
-        
+        <Button
+          mode="outlined"
+          style={{ marginTop: 8, borderRadius: 12 }}
+          onPress={() => {
+            Alert.alert(
+              "¿Salir?",
+              "Si sales ahora, deberás crear tu perfil profesional para usar la app como proveedor. ¿Deseas cerrar sesión?",
+              [
+                { text: "Cancelar", style: "cancel" },
+                { text: "Cerrar sesión", style: "destructive", onPress: signOut }
+              ]
+            )
+          }}
+        >
+          Cancelar y cerrar sesión
+        </Button>
         {error && (
           <Text style={{ color: "red", textAlign: "center", marginBottom: 8 }}>
             {error}

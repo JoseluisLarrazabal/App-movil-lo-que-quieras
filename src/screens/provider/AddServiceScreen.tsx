@@ -1,24 +1,41 @@
 "use client"
 
-import { useState } from "react"
-import { StyleSheet, View, ScrollView, Alert } from "react-native"
+import { useState, useContext, useEffect } from "react"
+import { StyleSheet, View, ScrollView, Alert, TouchableOpacity } from "react-native"
 import { useRoute, useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import type { RootStackParamList } from "../../navigation/types"
 import { useSelector, useDispatch } from "react-redux"
 import { TextInput, Button, Card, Title, Paragraph, Chip, Appbar, Menu } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
-import type { RootState } from "../../redux/store"
-import { addService, updateService } from "../../redux/slices/servicesSlice"
+import type { RootState, AppDispatch } from "../../redux/store"
+import { createService } from "../../redux/slices/servicesSlice"
 import { theme } from "../../theme"
+import { AuthContext } from "../../context/AuthContext"
+import { fetchCategories } from "../../redux/slices/categoriesSlice"
 
 type AddServiceScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "AddService">
+
+// Copia de iconMap de CategoryButton
+const iconMap: Record<string, string> = {
+  broom: "🧹",
+  wrench: "🔧",
+  "lightning-bolt": "⚡",
+  hammer: "🔨",
+  tree: "🌱",
+  brush: "🎨",
+  car: "🚗",
+  laptop: "💻",
+  heart: "❤️",
+  school: "🏫",
+}
 
 export default function AddServiceScreen() {
   const route = useRoute()
   const navigation = useNavigation<AddServiceScreenNavigationProp>()
-  const dispatch = useDispatch()
+  const dispatch: AppDispatch = useDispatch()
   const { items: categories } = useSelector((state: RootState) => state.categories)
+  const { currentUser } = useContext(AuthContext)
 
   const { serviceId, mode } = (route.params as { serviceId?: string; mode?: "edit" }) || {}
   const isEditing = mode === "edit"
@@ -30,46 +47,48 @@ export default function AddServiceScreen() {
   const [duration, setDuration] = useState("")
   const [includesMaterials, setIncludesMaterials] = useState(false)
   const [showCategoryMenu, setShowCategoryMenu] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSaveService = () => {
+  // Cargar categorías reales al montar
+  useEffect(() => {
+    if (!categories || categories.length === 0) {
+      dispatch(fetchCategories())
+    }
+  }, [dispatch])
+
+  const handleSaveService = async () => {
     if (!title || !description || !price || !selectedCategory) {
       Alert.alert("Error", "Por favor completa todos los campos obligatorios")
       return
     }
-
-    const serviceData = {
-      id: isEditing ? serviceId! : Date.now().toString(),
-      title,
-      description,
-      price: Number.parseFloat(price),
-      rating: 0,
-      image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
-      category: {
-        id: selectedCategory.id,
-        name: selectedCategory.name,
-      },
-      provider: {
-        id: "1", // Current provider ID
-        name: "María García",
-        avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-        rating: 4.9,
-      },
-      location: {
-        lat: -34.6037,
-        lng: -58.3816,
-        address: "Buenos Aires, Argentina",
-      },
-    }
-
-    if (isEditing) {
-      dispatch(updateService(serviceData))
-      Alert.alert("Éxito", "Servicio actualizado correctamente")
-    } else {
-      dispatch(addService(serviceData))
+    setIsLoading(true)
+    try {
+      await dispatch(createService({
+        title,
+        description,
+        price: Number.parseFloat(price),
+        duration: Number.parseInt(duration) || 60,
+        category: selectedCategory._id,
+        images: [
+          "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400"
+        ],
+        features: includesMaterials ? ["Incluye materiales"] : [],
+        availability: {},
+      }) as any).unwrap()
       Alert.alert("Éxito", "Servicio creado correctamente")
+      // Limpiar formulario
+      setTitle("")
+      setDescription("")
+      setPrice("")
+      setSelectedCategory(null)
+      setDuration("")
+      setIncludesMaterials(false)
+      navigation.goBack()
+    } catch (error) {
+      Alert.alert("Error", (error as any)?.message || "Error al crear servicio")
+    } finally {
+      setIsLoading(false)
     }
-
-    navigation.goBack()
   }
 
   return (
@@ -107,24 +126,33 @@ export default function AddServiceScreen() {
               visible={showCategoryMenu}
               onDismiss={() => setShowCategoryMenu(false)}
               anchor={
-                <TextInput
-                  label="Categoría *"
-                  value={selectedCategory?.name || ""}
-                  style={styles.input}
-                  editable={false}
-                  right={<TextInput.Icon icon="chevron-down" onPress={() => setShowCategoryMenu(true)} />}
-                  placeholder="Selecciona una categoría"
-                />
+                <TouchableOpacity onPress={() => setShowCategoryMenu(true)} activeOpacity={0.8} style={[styles.input, styles.categoryInputTouchable]}>
+                  <View style={styles.categoryInputContent}>
+                    <View style={[styles.categoryIconBox, { backgroundColor: selectedCategory?.color || theme.colors.disabled }]}> 
+                      <Paragraph style={styles.categoryIcon}>{iconMap[selectedCategory?.icon] || "❓"}</Paragraph>
+                    </View>
+                    <Paragraph style={{ color: selectedCategory ? theme.colors.text : theme.colors.placeholder, flex: 1, fontSize: 15 }}>
+                      {selectedCategory?.name || "Selecciona una categoría"}
+                    </Paragraph>
+                  </View>
+                </TouchableOpacity>
               }
             >
               {categories.map((category) => (
                 <Menu.Item
-                  key={category.id}
+                  key={category._id}
                   onPress={() => {
                     setSelectedCategory(category)
                     setShowCategoryMenu(false)
                   }}
-                  title={`${category.icon} ${category.name}`}
+                  title={
+                    <View style={styles.menuCategoryRow}>
+                      <View style={[styles.categoryIconBox, { backgroundColor: category.color || theme.colors.disabled }]}> 
+                        <Paragraph style={styles.categoryIcon}>{iconMap[category.icon] || "❓"}</Paragraph>
+                      </View>
+                      <Paragraph style={styles.menuCategoryName}>{category.name}</Paragraph>
+                    </View>
+                  }
                 />
               ))}
             </Menu>
@@ -187,8 +215,8 @@ export default function AddServiceScreen() {
           <Button mode="outlined" style={styles.cancelButton} onPress={() => navigation.goBack()}>
             Cancelar
           </Button>
-          <Button mode="contained" style={styles.saveButton} onPress={handleSaveService}>
-            {isEditing ? "Actualizar" : "Crear servicio"}
+          <Button mode="contained" style={styles.saveButton} onPress={handleSaveService} loading={isLoading} disabled={isLoading}>
+            {isEditing ? "Actualizar" : isLoading ? "Creando..." : "Crear servicio"}
           </Button>
         </View>
       </ScrollView>
@@ -265,5 +293,45 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
     borderRadius: 12,
+  },
+  categoryInputTouchable: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.disabled,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    marginBottom: 16,
+    backgroundColor: "transparent",
+  },
+  categoryInputContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 8,
+  },
+  categoryIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  categoryIcon: {
+    fontSize: 18,
+    textAlign: "center",
+  },
+  menuCategoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  menuCategoryName: {
+    fontSize: 15,
+    color: theme.colors.text,
+    marginLeft: 4,
   },
 })

@@ -75,6 +75,7 @@ export default function MainNavigator() {
           <Stack.Screen name="CategoryScreen" component={CategoryScreen} />
           <Stack.Screen name="AllServicesScreen" component={AllServicesScreen} />
           <Stack.Screen name="ProviderPublicProfile" component={PublicProviderProfileScreen} />
+          <Stack.Screen name="AddService" component={require('../screens/provider/AddServiceScreen').default} />
         </>
       )}
     </Stack.Navigator>

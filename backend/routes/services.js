@@ -93,7 +93,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear nuevo servicio (solo proveedores)
-router.post('/', authenticateToken, authorizeRoles(['provider']), async (req, res) => {
+router.post('/', authenticateToken, authorizeRoles('provider'), async (req, res) => {
   try {
     const {
       title,
@@ -138,7 +138,7 @@ router.post('/', authenticateToken, authorizeRoles(['provider']), async (req, re
 });
 
 // Actualizar servicio (solo el proveedor propietario)
-router.put('/:id', authenticateToken, authorizeRoles(['provider']), async (req, res) => {
+router.put('/:id', authenticateToken, authorizeRoles('provider'), async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
     
@@ -198,7 +198,7 @@ router.put('/:id', authenticateToken, authorizeRoles(['provider']), async (req, 
 });
 
 // Eliminar servicio (solo el proveedor propietario)
-router.delete('/:id', authenticateToken, authorizeRoles(['provider']), async (req, res) => {
+router.delete('/:id', authenticateToken, authorizeRoles('provider'), async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
     

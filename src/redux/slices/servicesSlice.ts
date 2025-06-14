@@ -77,6 +77,121 @@ export const fetchServices = createAsyncThunk<
   }
 )
 
+// Thunk para crear servicio
+export const createService = createAsyncThunk<
+  Service,
+  {
+    title: string;
+    description: string;
+    price: number;
+    duration: number;
+    category: string; // categoryId
+    images?: string[];
+    features?: string[];
+    availability?: any;
+  },
+  { rejectValue: { message: string; data?: any } }
+>(
+  "services/createService",
+  async (serviceData, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/services", serviceData)
+      const s = res.data.service
+      return {
+        id: s._id,
+        title: s.title,
+        description: s.description,
+        price: s.price,
+        rating: s.rating || 0,
+        image: s.images?.[0] || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
+        category: {
+          id: s.category?._id || s.category?.id || "",
+          name: s.category?.name || ""
+        },
+        provider: {
+          id: s.provider?._id || s.provider?.id || "",
+          name: s.provider?.name || "",
+          avatar: s.provider?.avatar || "https://randomuser.me/api/portraits/men/32.jpg",
+          rating: s.provider?.rating || 0
+        },
+        location: {
+          lat: s.location?.lat || 0,
+          lng: s.location?.lng || 0,
+          address: s.location?.address || ""
+        }
+      }
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al crear servicio",
+        data: error.response?.data
+      })
+    }
+  }
+)
+
+// Thunk para actualizar servicio
+export const updateServiceAsync = createAsyncThunk<
+  Service,
+  { id: string; data: Partial<Service> },
+  { rejectValue: { message: string; data?: any } }
+>(
+  "services/updateService",
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const res = await api.put(`/services/${id}`, data)
+      const s = res.data.service
+      return {
+        id: s._id,
+        title: s.title,
+        description: s.description,
+        price: s.price,
+        rating: s.rating || 0,
+        image: s.images?.[0] || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
+        category: {
+          id: s.category?._id || s.category?.id || "",
+          name: s.category?.name || ""
+        },
+        provider: {
+          id: s.provider?._id || s.provider?.id || "",
+          name: s.provider?.name || "",
+          avatar: s.provider?.avatar || "https://randomuser.me/api/portraits/men/32.jpg",
+          rating: s.provider?.rating || 0
+        },
+        location: {
+          lat: s.location?.lat || 0,
+          lng: s.location?.lng || 0,
+          address: s.location?.address || ""
+        }
+      }
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al actualizar servicio",
+        data: error.response?.data
+      })
+    }
+  }
+)
+
+// Thunk para eliminar servicio
+export const deleteServiceAsync = createAsyncThunk<
+  string,
+  string,
+  { rejectValue: { message: string; data?: any } }
+>(
+  "services/deleteService",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/services/${id}`)
+      return id
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al eliminar servicio",
+        data: error.response?.data
+      })
+    }
+  }
+)
+
 const initialState: ServicesState = {
   items: [],
   popularServices: [],
@@ -119,6 +234,49 @@ const servicesSlice = createSlice({
         state.error = null
       })
       .addCase(fetchServices.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+      // Crear servicio
+      .addCase(createService.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(createService.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        state.items.push(action.payload)
+        state.error = null
+      })
+      .addCase(createService.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+      // Actualizar servicio
+      .addCase(updateServiceAsync.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(updateServiceAsync.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        const idx = state.items.findIndex(s => s.id === action.payload.id)
+        if (idx !== -1) state.items[idx] = action.payload
+        state.error = null
+      })
+      .addCase(updateServiceAsync.rejected, (state, action) => {
+        state.status = "failed"
+        state.error = action.payload?.message || "Error desconocido"
+      })
+      // Eliminar servicio
+      .addCase(deleteServiceAsync.pending, (state) => {
+        state.status = "loading"
+        state.error = null
+      })
+      .addCase(deleteServiceAsync.fulfilled, (state, action) => {
+        state.status = "succeeded"
+        state.items = state.items.filter(s => s.id !== action.payload)
+        state.error = null
+      })
+      .addCase(deleteServiceAsync.rejected, (state, action) => {
         state.status = "failed"
         state.error = action.payload?.message || "Error desconocido"
       })

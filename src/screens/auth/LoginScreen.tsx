@@ -5,11 +5,13 @@ import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform, Alert } f
 import { TextInput, Button, Text, Title, Paragraph } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { RootStackParamList } from "../../navigation/types"
 import { AuthContext } from "../../context/AuthContext"
 import { theme } from "../../theme"
 
 export default function LoginScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
   const { signIn } = useContext(AuthContext)
 
   const [email, setEmail] = useState("")
@@ -34,14 +36,10 @@ export default function LoginScreen() {
           "Como proveedor, debes crear tu perfil profesional antes de poder acceder a la aplicación.",
           [
             {
-              text: "Crear Perfil",
+              text: "OK",
               onPress: () => {
-                navigation.navigate("CreateProfessionalProfile" as never)
+                // NO navega manualmente, deja que el MainNavigator lo haga
               }
-            },
-            {
-              text: "Cancelar",
-              style: "cancel"
             }
           ]
         )

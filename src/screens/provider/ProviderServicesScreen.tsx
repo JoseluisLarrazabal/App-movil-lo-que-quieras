@@ -1,10 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { StyleSheet, View, ScrollView, Alert } from "react-native"
 import { Card, Title, Button, FAB, Portal, Modal, TextInput, Text } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { theme } from "../../theme"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState, AppDispatch } from "../../redux/store"
+import { fetchServices, createService, deleteServiceAsync } from "../../redux/slices/servicesSlice"
+import { useNavigation } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
 interface Service {
   id: string
@@ -16,59 +21,13 @@ interface Service {
 }
 
 export default function ProviderServicesScreen() {
-  const [services, setServices] = useState<Service[]>([
-    {
-      id: "1",
-      name: "Corte de cabello",
-      description: "Corte de cabello profesional con lavado incluido",
-      price: 25,
-      duration: 30,
-      category: "Peluquería",
-    },
-    {
-      id: "2",
-      name: "Manicure",
-      description: "Manicure completo con esmalte semipermanente",
-      price: 35,
-      duration: 45,
-      category: "Belleza",
-    },
-  ])
+  const dispatch: AppDispatch = useDispatch()
+  const { items: services, status, error } = useSelector((state: RootState) => state.services)
+  const navigation = useNavigation<NativeStackNavigationProp<any>>()
 
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [newService, setNewService] = useState<Partial<Service>>({
-    name: "",
-    description: "",
-    price: 0,
-    duration: 30,
-    category: "",
-  })
-
-  const handleAddService = () => {
-    if (!newService.name || !newService.description || !newService.category) {
-      Alert.alert("Error", "Por favor completa todos los campos requeridos")
-      return
-    }
-
-    const service: Service = {
-      id: Date.now().toString(),
-      name: newService.name,
-      description: newService.description,
-      price: newService.price || 0,
-      duration: newService.duration || 30,
-      category: newService.category,
-    }
-
-    setServices([...services, service])
-    setShowAddModal(false)
-    setNewService({
-      name: "",
-      description: "",
-      price: 0,
-      duration: 30,
-      category: "",
-    })
-  }
+  useEffect(() => {
+    dispatch(fetchServices())
+  }, [dispatch])
 
   const handleDeleteService = (id: string) => {
     Alert.alert(
@@ -79,8 +38,8 @@ export default function ProviderServicesScreen() {
         {
           text: "Eliminar",
           style: "destructive",
-          onPress: () => {
-            setServices(services.filter(service => service.id !== id))
+          onPress: async () => {
+            await dispatch(deleteServiceAsync(id))
           },
         },
       ]
@@ -98,12 +57,12 @@ export default function ProviderServicesScreen() {
         {services.map(service => (
           <Card key={service.id} style={styles.serviceCard}>
             <Card.Content>
-              <Title style={styles.serviceName}>{service.name}</Title>
-              <Text style={styles.serviceCategory}>{service.category}</Text>
+              <Title style={styles.serviceName}>{service.title}</Title>
+              <Text style={styles.serviceCategory}>{service.category?.name}</Text>
               <Text style={styles.serviceDescription}>{service.description}</Text>
               <View style={styles.serviceDetails}>
                 <Text style={styles.servicePrice}>${service.price}</Text>
-                <Text style={styles.serviceDuration}>{service.duration} min</Text>
+                <Text style={styles.serviceDuration}>{(service as any).duration ?? 0} min</Text>
               </View>
             </Card.Content>
             <Card.Actions>
@@ -116,68 +75,10 @@ export default function ProviderServicesScreen() {
         ))}
       </ScrollView>
 
-      <Portal>
-        <Modal
-          visible={showAddModal}
-          onDismiss={() => setShowAddModal(false)}
-          contentContainerStyle={styles.modalContainer}
-        >
-          <Title style={styles.modalTitle}>Agregar Nuevo Servicio</Title>
-
-          <TextInput
-            label="Nombre del servicio"
-            value={newService.name}
-            onChangeText={text => setNewService({ ...newService, name: text })}
-            style={styles.input}
-          />
-
-          <TextInput
-            label="Categoría"
-            value={newService.category}
-            onChangeText={text => setNewService({ ...newService, category: text })}
-            style={styles.input}
-          />
-
-          <TextInput
-            label="Descripción"
-            value={newService.description}
-            onChangeText={text => setNewService({ ...newService, description: text })}
-            multiline
-            numberOfLines={3}
-            style={styles.input}
-          />
-
-          <TextInput
-            label="Precio"
-            value={newService.price?.toString()}
-            onChangeText={text => setNewService({ ...newService, price: parseFloat(text) || 0 })}
-            keyboardType="numeric"
-            style={styles.input}
-          />
-
-          <TextInput
-            label="Duración (minutos)"
-            value={newService.duration?.toString()}
-            onChangeText={text => setNewService({ ...newService, duration: parseInt(text) || 30 })}
-            keyboardType="numeric"
-            style={styles.input}
-          />
-
-          <View style={styles.modalActions}>
-            <Button mode="outlined" onPress={() => setShowAddModal(false)} style={styles.modalButton}>
-              Cancelar
-            </Button>
-            <Button mode="contained" onPress={handleAddService} style={styles.modalButton}>
-              Agregar
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
-
       <FAB
         icon="plus"
         style={styles.fab}
-        onPress={() => setShowAddModal(true)}
+        onPress={() => navigation.navigate("AddService", { mode: "add" })}
         label="Agregar servicio"
       />
     </SafeAreaView>
