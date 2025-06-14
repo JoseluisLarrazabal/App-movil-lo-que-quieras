@@ -29,7 +29,16 @@ export default function ProviderServicesScreen() {
     dispatch(fetchServices())
   }, [dispatch])
 
-  const handleDeleteService = (id: string) => {
+  const handleDeleteService = async (id: string) => {
+    try {
+      await dispatch(deleteServiceAsync(id) as any).unwrap()
+      Alert.alert("Éxito", "Servicio eliminado correctamente")
+    } catch (error) {
+      Alert.alert("Error", (error as any)?.message || "No se pudo eliminar el servicio")
+    }
+  }
+
+  const confirmDeleteService = (id: string) => {
     Alert.alert(
       "Eliminar servicio",
       "¿Estás seguro que deseas eliminar este servicio?",
@@ -38,9 +47,7 @@ export default function ProviderServicesScreen() {
         {
           text: "Eliminar",
           style: "destructive",
-          onPress: async () => {
-            await dispatch(deleteServiceAsync(id))
-          },
+          onPress: () => handleDeleteService(id),
         },
       ]
     )
@@ -66,8 +73,8 @@ export default function ProviderServicesScreen() {
               </View>
             </Card.Content>
             <Card.Actions>
-              <Button onPress={() => {}}>Editar</Button>
-              <Button onPress={() => handleDeleteService(service.id)} textColor={theme.colors.error}>
+              <Button onPress={() => navigation.navigate("AddService", { serviceId: service.id, mode: "edit" })}>Editar</Button>
+              <Button onPress={() => confirmDeleteService(service.id)} textColor={theme.colors.error}>
                 Eliminar
               </Button>
             </Card.Actions>

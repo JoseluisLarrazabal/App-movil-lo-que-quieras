@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { TextInput, Button, Card, Title, Paragraph, Chip, Appbar, Menu } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
 import type { RootState, AppDispatch } from "../../redux/store"
-import { createService } from "../../redux/slices/servicesSlice"
+import { createService, updateServiceAsync } from "../../redux/slices/servicesSlice"
 import { theme } from "../../theme"
 import { AuthContext } from "../../context/AuthContext"
 import { fetchCategories } from "../../redux/slices/categoriesSlice"
@@ -35,6 +35,7 @@ export default function AddServiceScreen() {
   const navigation = useNavigation<AddServiceScreenNavigationProp>()
   const dispatch: AppDispatch = useDispatch()
   const { items: categories } = useSelector((state: RootState) => state.categories)
+  const { items: services } = useSelector((state: RootState) => state.services)
   const { currentUser } = useContext(AuthContext)
 
   const { serviceId, mode } = (route.params as { serviceId?: string; mode?: "edit" }) || {}
@@ -54,7 +55,29 @@ export default function AddServiceScreen() {
     if (!categories || categories.length === 0) {
       dispatch(fetchCategories())
     }
-  }, [dispatch])
+    // Si es edición, cargar datos del servicio
+    if (isEditing && serviceId) {
+      const service = services.find(s => s.id === serviceId)
+      if (service) {
+        setTitle(service.title || "")
+        setDescription(service.description || "")
+        setPrice(service.price?.toString() || "")
+        setDuration((service as any).duration?.toString() || "")
+        setSelectedCategory(categories.find(c => c._id === (service.category?.id || service.category)) || null)
+        setIncludesMaterials((service as any).features?.includes("Incluye materiales") || false)
+      } else {
+        Alert.alert("Error", "No se encontró el servicio a editar")
+        navigation.goBack()
+      }
+    } else if (!isEditing) {
+      setTitle("")
+      setDescription("")
+      setPrice("")
+      setDuration("")
+      setSelectedCategory(null)
+      setIncludesMaterials(false)
+    }
+  }, [dispatch, isEditing, serviceId, categories, services])
 
   const handleSaveService = async () => {
     if (!title || !description || !price || !selectedCategory) {
@@ -63,19 +86,36 @@ export default function AddServiceScreen() {
     }
     setIsLoading(true)
     try {
-      await dispatch(createService({
-        title,
-        description,
-        price: Number.parseFloat(price),
-        duration: Number.parseInt(duration) || 60,
-        category: selectedCategory._id,
-        images: [
-          "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400"
-        ],
-        features: includesMaterials ? ["Incluye materiales"] : [],
-        availability: {},
-      }) as any).unwrap()
-      Alert.alert("Éxito", "Servicio creado correctamente")
+      if (isEditing && serviceId) {
+        await dispatch(updateServiceAsync({
+          id: serviceId,
+          data: {
+            title,
+            description,
+            price: Number.parseFloat(price),
+            duration: Number.parseInt(duration) || 60,
+            category: selectedCategory._id,
+            images: [
+              "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400"
+            ],
+            features: includesMaterials ? ["Incluye materiales"] : []
+          }
+        }) as any).unwrap()
+        Alert.alert("Éxito", "Servicio actualizado correctamente")
+      } else {
+        await dispatch(createService({
+          title,
+          description,
+          price: Number.parseFloat(price),
+          duration: Number.parseInt(duration) || 60,
+          category: selectedCategory._id,
+          images: [
+            "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400"
+          ],
+          features: includesMaterials ? ["Incluye materiales"] : []
+        }) as any).unwrap()
+        Alert.alert("Éxito", "Servicio creado correctamente")
+      }
       // Limpiar formulario
       setTitle("")
       setDescription("")
@@ -85,7 +125,7 @@ export default function AddServiceScreen() {
       setIncludesMaterials(false)
       navigation.goBack()
     } catch (error) {
-      Alert.alert("Error", (error as any)?.message || "Error al crear servicio")
+      Alert.alert("Error", (error as any)?.message || (isEditing ? "Error al actualizar servicio" : "Error al crear servicio"))
     } finally {
       setIsLoading(false)
     }

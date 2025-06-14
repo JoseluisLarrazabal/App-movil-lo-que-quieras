@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
 import api from "../../services/api"
+import type { RootState } from "../store"
 
 export interface Service {
   id: string
@@ -23,6 +24,9 @@ export interface Service {
     lng: number
     address: string
   }
+  duration?: number
+  features?: string[]
+  images?: string[]
 }
 
 interface ServicesState {
@@ -38,12 +42,19 @@ interface ServicesState {
 export const fetchServices = createAsyncThunk<
   Service[],
   void,
-  { rejectValue: { message: string; data?: any } }
+  { rejectValue: { message: string; data?: any }, state: RootState }
 >(
   "services/fetchServices",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      const res = await api.get("/services")
+      const state = getState()
+      const user = state && (state as any).auth?.currentUser
+      let res
+      if (user?.role === "provider") {
+        res = await api.get(`/services?provider=${user.id}`)
+      } else {
+        res = await api.get("/services")
+      }
       // Mapear los servicios para que coincidan con la interfaz del frontend
       return res.data.services.map((s: any) => ({
         id: s._id,
@@ -52,6 +63,7 @@ export const fetchServices = createAsyncThunk<
         price: s.price,
         rating: s.rating || 0,
         image: s.images?.[0] || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
+        images: s.images,
         category: {
           id: s.category?._id || s.category?.id || "",
           name: s.category?.name || ""
@@ -66,7 +78,9 @@ export const fetchServices = createAsyncThunk<
           lat: s.location?.lat || 0,
           lng: s.location?.lng || 0,
           address: s.location?.address || ""
-        }
+        },
+        duration: s.duration,
+        features: s.features
       }))
     } catch (error: any) {
       return rejectWithValue({
@@ -118,7 +132,9 @@ export const createService = createAsyncThunk<
           lat: s.location?.lat || 0,
           lng: s.location?.lng || 0,
           address: s.location?.address || ""
-        }
+        },
+        duration: s.duration,
+        features: s.features
       }
     } catch (error: any) {
       return rejectWithValue({
@@ -161,7 +177,9 @@ export const updateServiceAsync = createAsyncThunk<
           lat: s.location?.lat || 0,
           lng: s.location?.lng || 0,
           address: s.location?.address || ""
-        }
+        },
+        duration: s.duration,
+        features: s.features
       }
     } catch (error: any) {
       return rejectWithValue({
