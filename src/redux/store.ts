@@ -7,6 +7,7 @@ import searchHistoryReducer from "./slices/searchHistorySlice"
 import professionalsReducer from "./slices/professionalsSlice"
 import usersReducer from "./slices/usersSlice"
 import healthFacilitiesReducer from "./slices/healthFacilitiesSlice"
+import localStoresReducer from "./slices/localStoresSlice"
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +18,7 @@ export const store = configureStore({
     professionals: professionalsReducer, 
     users: usersReducer,
     healthFacilities: healthFacilitiesReducer,
+    localStores: localStoresReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -6,6 +6,7 @@ const { seedCategories } = require('./categories');
 const bcrypt = require('bcryptjs');
 const HealthFacility = require('../models/HealthFacility');
 const Professional = require('../models/Professionals');
+const { seedLocalStores } = require('./localStores');
 require('dotenv').config();
 
 // NUEVO: Seed de usuarios providers
@@ -285,6 +286,10 @@ const seedData = async () => {
     await HealthFacility.deleteMany({});
     await HealthFacility.insertMany(healthFacilities);
     console.log(`✅ ${healthFacilities.length} establecimientos de salud creados exitosamente`);
+
+    // Sembrar comercios locales y supermercados
+    await seedLocalStores();
+    console.log('✅ Comercios locales y supermercados sembrados exitosamente');
 
     console.log('🎉 Proceso de seeding completado exitosamente');
   } catch (error) {

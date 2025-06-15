@@ -62,4 +62,18 @@ api.interceptors.response.use(
   },
 )
 
+// Comercios locales y supermercados
+export async function fetchLocalStores(params: { type?: string; city?: string; search?: string } = {}) {
+  const query = new URLSearchParams(params as any).toString();
+  const res = await fetch(`${BASE_URL}/local-stores${query ? `?${query}` : ''}`);
+  if (!res.ok) throw new Error('Error al obtener comercios');
+  return await res.json();
+}
+
+export async function fetchLocalStoreById(id: string) {
+  const res = await fetch(`${BASE_URL}/local-stores/${id}`);
+  if (!res.ok) throw new Error('Error al obtener comercio');
+  return await res.json();
+}
+
 export default api

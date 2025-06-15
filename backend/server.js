@@ -7,6 +7,7 @@ const socketIo = require("socket.io");
 const rateLimit = require("express-rate-limit");
 const professionalsRoutes = require("./routes/Professionals");
 const healthFacilitiesRoutes = require("./routes/healthFacilities");
+const localStoresRoutes = require("./routes/localStores");
 
 // Agregar después de las importaciones existentes
 require("./models/User");
@@ -58,34 +59,35 @@ app.use("/api/categories", categoriesRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/bookings", bookingsRoutes);
 app.use("/api/health-facilities", healthFacilitiesRoutes);
+app.use("/api/local-stores", localStoresRoutes);
 
 // Conexión a MongoDB
 mongoose
   .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => {
     console.log("✅ Conectado a MongoDB");
-  })
-  .catch((error) => {
+})
+.catch((error) => {
     console.error("❌ Error conectando a MongoDB:", error);
-    process.exit(1);
-  });
+  process.exit(1);
+});
 
 // Socket.io para chat en tiempo real
 io.on("connection", (socket) => {
   console.log("🔌 Usuario conectado:", socket.id);
-
+  
   socket.on("join_chat", (data) => {
     socket.join(data.chatId);
     console.log(`👤 Usuario ${socket.id} se unió al chat ${data.chatId}`);
   });
-
+  
   socket.on("send_message", (data) => {
     io.to(data.chatId).emit("receive_message", data);
   });
-
+  
   socket.on("disconnect", () => {
     console.log("🔌 Usuario desconectado:", socket.id);
   });
@@ -93,7 +95,7 @@ io.on("connection", (socket) => {
 
 // Rutas básicas
 app.get("/", (req, res) => {
-  res.json({
+  res.json({ 
     message: "🚀 Lo Que Quieras API funcionando!",
     version: "1.0.0",
     status: "OK",
@@ -101,7 +103,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({
+  res.json({ 
     status: "OK",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
@@ -110,7 +112,7 @@ app.get("/api/health", (req, res) => {
 
 // Middleware para rutas no encontradas
 app.use("*", (req, res) => {
-  res.status(404).json({
+  res.status(404).json({ 
     message: "Ruta no encontrada",
     path: req.originalUrl,
   });

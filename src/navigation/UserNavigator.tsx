@@ -9,6 +9,7 @@ import ProfessionalSearchScreen from "../screens/professional/ProfessionalSearch
 import BookingsScreen from "../screens/user/BookingsScreen"
 import ProfileScreen from "../screens/user/ProfileScreen"
 import HealthMapScreen from '../screens/health/HealthMapScreen'
+import CommerceMapScreen from '../screens/commerce/CommerceMapScreen'
 
 const Tab = createBottomTabNavigator()
 
@@ -89,6 +90,16 @@ export default function UserNavigator() {
           tabBarLabel: "Salud",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="hospital-building" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Commerce"
+        component={CommerceMapScreen}
+        options={{
+          tabBarLabel: "Comercios",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="storefront" size={size} color={color} />
           ),
         }}
       />

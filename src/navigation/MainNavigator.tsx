@@ -29,6 +29,8 @@ import CategoryScreen from "../screens/user/CategoryScreen"
 import AllServicesScreen from "../screens/user/AllServicesScreen"
 import PublicProviderProfileScreen from "../screens/user/PublicProviderProfileScreen"
 import HealthFacilityDetailScreen from '../screens/health/HealthFacilityDetailScreen'
+import CommerceMapScreen from '../screens/commerce/CommerceMapScreen'
+import CommerceDetailScreen from '../screens/commerce/CommerceDetailScreen'
 
 const Stack = createNativeStackNavigator()
 
@@ -78,6 +80,8 @@ export default function MainNavigator() {
           <Stack.Screen name="ProviderPublicProfile" component={PublicProviderProfileScreen} />
           <Stack.Screen name="AddService" component={require('../screens/provider/AddServiceScreen').default} />
           <Stack.Screen name="HealthFacilityDetail" component={HealthFacilityDetailScreen} />
+          <Stack.Screen name="CommerceMap" component={CommerceMapScreen} options={{ title: 'Comercios' }} />
+          <Stack.Screen name="CommerceDetail" component={CommerceDetailScreen} options={{ title: 'Detalle de Comercio' }} />
         </>
       )}
     </Stack.Navigator>

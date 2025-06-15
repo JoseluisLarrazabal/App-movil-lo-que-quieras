@@ -28,17 +28,17 @@ router.get("/", authenticateToken, async (req, res) => {
     } else if (status === "inactive") {
       filters.isActive = false;
     }
-
+    
     // Filtro por categoría
     if (category) {
       filters.category = category;
     }
-
+    
     // Filtro por proveedor
     if (provider) {
       filters.provider = provider;
     }
-
+    
     // Filtro por búsqueda de texto
     if (search) {
       filters.$or = [
@@ -46,7 +46,7 @@ router.get("/", authenticateToken, async (req, res) => {
         { description: { $regex: search, $options: "i" } },
       ];
     }
-
+    
     // Filtro por precio
     if (minPrice || maxPrice) {
       filters.price = {};
@@ -107,47 +107,47 @@ router.post(
   authenticateToken,
   authorizeRoles("provider"),
   async (req, res) => {
-    try {
-      const {
-        title,
-        description,
-        category,
-        price,
-        duration,
-        images,
-        features,
+  try {
+    const {
+      title,
+      description,
+      category,
+      price,
+      duration,
+      images,
+      features,
         availability,
-      } = req.body;
+    } = req.body;
 
-      const service = new Service({
-        title,
-        description,
-        category,
-        price,
-        duration,
-        images,
-        features,
-        availability,
+    const service = new Service({
+      title,
+      description,
+      category,
+      price,
+      duration,
+      images,
+      features,
+      availability,
         provider: req.user._id,
-      });
+    });
 
-      await service.save();
+    await service.save();
 
-      // Populate para la respuesta
-      const populatedService = await Service.findById(service._id)
+    // Populate para la respuesta
+    const populatedService = await Service.findById(service._id)
         .populate("category", "name icon color")
         .populate("provider", "name avatar");
 
-      res.status(201).json({
+    res.status(201).json({
         message: "Servicio creado exitosamente",
         service: populatedService,
-      });
-    } catch (error) {
+    });
+  } catch (error) {
       console.error("Error creando servicio:", error);
-      res.status(500).json({
+    res.status(500).json({
         message: "Error interno del servidor",
-      });
-    }
+    });
+  }
   },
 );
 
@@ -157,62 +157,62 @@ router.put(
   authenticateToken,
   authorizeRoles("provider"),
   async (req, res) => {
-    try {
-      const service = await Service.findById(req.params.id);
-
-      if (!service) {
-        return res.status(404).json({
+  try {
+    const service = await Service.findById(req.params.id);
+    
+    if (!service) {
+      return res.status(404).json({
           message: "Servicio no encontrado",
-        });
-      }
+      });
+    }
 
-      // Verificar que el usuario sea el propietario del servicio
-      if (service.provider.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
+    // Verificar que el usuario sea el propietario del servicio
+    if (service.provider.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
           message: "No tienes permisos para modificar este servicio",
-        });
-      }
+      });
+    }
 
-      const {
-        title,
-        description,
-        category,
-        price,
-        duration,
-        images,
-        features,
-        availability,
+    const {
+      title,
+      description,
+      category,
+      price,
+      duration,
+      images,
+      features,
+      availability,
         isActive,
-      } = req.body;
+    } = req.body;
 
-      // Actualizar campos
-      if (title) service.title = title;
-      if (description) service.description = description;
-      if (category) service.category = category;
-      if (price) service.price = price;
-      if (duration) service.duration = duration;
-      if (images) service.images = images;
-      if (features) service.features = features;
-      if (availability) service.availability = availability;
-      if (isActive !== undefined) service.isActive = isActive;
+    // Actualizar campos
+    if (title) service.title = title;
+    if (description) service.description = description;
+    if (category) service.category = category;
+    if (price) service.price = price;
+    if (duration) service.duration = duration;
+    if (images) service.images = images;
+    if (features) service.features = features;
+    if (availability) service.availability = availability;
+    if (isActive !== undefined) service.isActive = isActive;
 
-      await service.save();
+    await service.save();
 
-      // Populate para la respuesta
-      const populatedService = await Service.findById(service._id)
+    // Populate para la respuesta
+    const populatedService = await Service.findById(service._id)
         .populate("category", "name icon color")
         .populate("provider", "name avatar");
 
-      res.json({
+    res.json({
         message: "Servicio actualizado exitosamente",
         service: populatedService,
-      });
-    } catch (error) {
+    });
+  } catch (error) {
       console.error("Error actualizando servicio:", error);
-      res.status(500).json({
+    res.status(500).json({
         message: "Error interno del servidor",
-      });
-    }
+    });
+  }
   },
 );
 
@@ -222,47 +222,47 @@ router.delete(
   authenticateToken,
   authorizeRoles("provider"),
   async (req, res) => {
-    try {
-      const service = await Service.findById(req.params.id);
-
-      if (!service) {
-        return res.status(404).json({
+  try {
+    const service = await Service.findById(req.params.id);
+    
+    if (!service) {
+      return res.status(404).json({
           message: "Servicio no encontrado",
-        });
-      }
-
-      // Verificar que el usuario sea el propietario del servicio
-      if (service.provider.toString() !== req.user._id.toString()) {
-        return res.status(403).json({
-          message: "No tienes permisos para eliminar este servicio",
-        });
-      }
-
-      // Soft delete
-      service.isActive = false;
-      await service.save();
-
-      res.json({
-        message: "Servicio eliminado exitosamente",
-      });
-    } catch (error) {
-      console.error("Error eliminando servicio:", error);
-      res.status(500).json({
-        message: "Error interno del servidor",
       });
     }
+
+    // Verificar que el usuario sea el propietario del servicio
+    if (service.provider.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+          message: "No tienes permisos para eliminar este servicio",
+      });
+    }
+
+    // Soft delete
+    service.isActive = false;
+    await service.save();
+
+    res.json({
+        message: "Servicio eliminado exitosamente",
+    });
+  } catch (error) {
+      console.error("Error eliminando servicio:", error);
+    res.status(500).json({
+        message: "Error interno del servidor",
+    });
+  }
   },
 );
 
 // Obtener servicios de un proveedor específico
 router.get("/provider/:providerId", async (req, res) => {
   try {
-    const services = await Service.find({
+    const services = await Service.find({ 
       provider: req.params.providerId,
       isActive: true,
     })
       .populate("category", "name icon color")
-      .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 });
 
     res.json({
       services,
@@ -327,4 +327,4 @@ router.patch(
   },
 );
 
-module.exports = router;
+module.exports = router; 

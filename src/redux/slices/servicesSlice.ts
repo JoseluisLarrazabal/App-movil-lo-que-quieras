@@ -53,7 +53,7 @@ export const fetchServices = createAsyncThunk<
   { status?: "all" | "active" | "inactive" },
   { rejectValue: { message: string; data?: any }; state: RootState }
 >("services/fetchServices", async (arg, { rejectWithValue, getState }) => {
-  try {
+    try {
     const state = getState();
     const user = state && (state as any).auth?.currentUser;
     let res;
@@ -64,13 +64,13 @@ export const fetchServices = createAsyncThunk<
     } else {
       res = await api.get("/services");
     }
-    // Mapear los servicios para que coincidan con la interfaz del frontend
-    return res.data.services.map((s: any) => ({
-      id: s._id,
-      title: s.title,
-      description: s.description,
-      price: s.price,
-      rating: s.rating || 0,
+      // Mapear los servicios para que coincidan con la interfaz del frontend
+      return res.data.services.map((s: any) => ({
+        id: s._id,
+        title: s.title,
+        description: s.description,
+        price: s.price,
+        rating: s.rating || 0,
       image:
         s.images?.[0] ||
         "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
@@ -181,21 +181,21 @@ export const updateServiceAsync = createAsyncThunk<
       image:
         s.images?.[0] ||
         "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
-      category: {
-        id: s.category?._id || s.category?.id || "",
+        category: {
+          id: s.category?._id || s.category?.id || "",
         name: s.category?.name || "",
-      },
-      provider: {
-        id: s.provider?._id || s.provider?.id || "",
-        name: s.provider?.name || "",
+        },
+        provider: {
+          id: s.provider?._id || s.provider?.id || "",
+          name: s.provider?.name || "",
         avatar:
           s.provider?.avatar ||
           "https://randomuser.me/api/portraits/men/32.jpg",
         rating: s.provider?.rating || 0,
-      },
-      location: {
-        lat: s.location?.lat || 0,
-        lng: s.location?.lng || 0,
+        },
+        location: {
+          lat: s.location?.lat || 0,
+          lng: s.location?.lng || 0,
         address: s.location?.address || "",
       },
       duration: s.duration,
@@ -262,7 +262,7 @@ export const adminRestoreService = createAsyncThunk<
         error.response?.data?.message || "Error al restaurar servicio (admin)",
       data: error.response?.data,
     });
-  }
+    }
 });
 
 const initialState: ServicesState = {
