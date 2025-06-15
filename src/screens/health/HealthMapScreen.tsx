@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, View, FlatList, TextInput, Dimensions } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { StyleSheet, View, FlatList, TextInput, Dimensions, TouchableOpacity } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Chip, ActivityIndicator, Card, Title } from "react-native-paper";
@@ -23,7 +23,7 @@ const facilityTypes = [
 const typeMeta = {
   hospital: { icon: 'hospital-building', color: '#10B981' },
   clinic: { icon: 'medical-bag', color: '#3B82F6' },
-  pharmacy: { icon: 'pharmacy', color: '#F59E0B' },
+  pharmacy: { icon: 'pill', color: '#F59E0B' },
   laboratory: { icon: 'flask', color: '#8B5CF6' },
   dentist: { icon: 'tooth', color: '#EC4899' },
   default: { icon: 'map-marker', color: theme.colors.primary },
@@ -37,6 +37,14 @@ export default function HealthMapScreen({ navigation }: any) {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
   const [locationLoading, setLocationLoading] = useState(true)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const mapRef = useRef<MapView>(null)
+
+  // Mover aquí la declaración de filteredFacilities
+  const filteredFacilities = facilities.filter(facility => {
+    const matchesType = !selectedType || facility.type === selectedType
+    const matchesSearch = !search || facility.name.toLowerCase().includes(search.toLowerCase())
+    return matchesType && matchesSearch
+  })
 
   useEffect(() => {
     dispatch(fetchHealthFacilities({ type: selectedType, search }))
@@ -62,11 +70,24 @@ export default function HealthMapScreen({ navigation }: any) {
     })()
   }, [])
 
-  const filteredFacilities = facilities.filter(facility => {
-    const matchesType = !selectedType || facility.type === selectedType
-    const matchesSearch = !search || facility.name.toLowerCase().includes(search.toLowerCase())
-    return matchesType && matchesSearch
-  })
+  // Estado para mostrar el botón 'Ver todos' solo si hay más de 1 marker
+  const showFitButton = filteredFacilities.length > 1;
+
+  // Handler para ajustar el mapa a todos los markers
+  const handleFitToMarkers = () => {
+    if (filteredFacilities.length > 0 && mapRef.current) {
+      mapRef.current.fitToCoordinates(
+        filteredFacilities.map(f => ({
+          latitude: f.location.lat,
+          longitude: f.location.lng,
+        })),
+        {
+          edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
+          animated: true,
+        }
+      )
+    }
+  }
 
   // Centrar el mapa en Cochabamba o en la ubicación del usuario
   const initialRegion = userLocation
@@ -77,9 +98,9 @@ export default function HealthMapScreen({ navigation }: any) {
         longitudeDelta: 0.08,
       }
     : {
-        latitude: -17.3895,
+        latitude: -17.3895, // Cochabamba
         longitude: -66.1568,
-        latitudeDelta: 0.08,
+        latitudeDelta: 0.08, // Zoom a nivel ciudad
         longitudeDelta: 0.08,
       }
 
@@ -130,33 +151,41 @@ export default function HealthMapScreen({ navigation }: any) {
         {(status === "loading" || locationLoading) ? (
           <ActivityIndicator style={{ marginTop: 40 }} size="large" />
         ) : (
-          <MapView
-            style={styles.map}
-            provider={PROVIDER_DEFAULT}
-            initialRegion={initialRegion}
-            region={userLocation ? { ...initialRegion } : undefined}
-            mapType="none"
-            showsUserLocation={!!userLocation}
-            showsMyLocationButton={true}
-            minZoomLevel={2}
-            maxZoomLevel={18}
-          >
-            {/* OpenStreetMap tiles */}
-            <UrlTile
-              urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maximumZ={19}
-              flipY={false}
-            />
-            {filteredFacilities.map(facility => (
-              <Marker
-                key={facility._id}
-                coordinate={{ latitude: facility.location.lat, longitude: facility.location.lng }}
-                title={facility.name}
-                description={facility.type}
-                onPress={() => navigation.navigate("HealthFacilityDetail", { id: facility._id })}
+          <>
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              provider={PROVIDER_DEFAULT}
+              initialRegion={initialRegion}
+              region={initialRegion}
+              mapType="none"
+              showsUserLocation={!!userLocation}
+              showsMyLocationButton={true}
+              minZoomLevel={2}
+              maxZoomLevel={18}
+            >
+              {/* OpenStreetMap tiles */}
+              <UrlTile
+                urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maximumZ={19}
+                flipY={false}
               />
-            ))}
-          </MapView>
+              {filteredFacilities.map(facility => (
+                <Marker
+                  key={facility._id}
+                  coordinate={{ latitude: facility.location.lat, longitude: facility.location.lng }}
+                  title={facility.name}
+                  description={facility.type}
+                  onPress={() => navigation.navigate("HealthFacilityDetail", { id: facility._id })}
+                />
+              ))}
+            </MapView>
+            {showFitButton && (
+              <TouchableOpacity style={styles.fitButton} onPress={handleFitToMarkers}>
+                <MaterialCommunityIcons name="map-search" size={28} color="white" />
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
       {filteredFacilities.length === 0 ? (
@@ -227,4 +256,20 @@ const styles = StyleSheet.create({
   emptyContainer: { alignItems: 'center', justifyContent: 'center', flex: 1, marginTop: 32 },
   emptyText: { fontSize: 16, color: theme.colors.placeholder, textAlign: 'center' },
   distance: { fontSize: 12, color: theme.colors.primary, marginTop: 4 },
+  fitButton: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 28,
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
 }) 

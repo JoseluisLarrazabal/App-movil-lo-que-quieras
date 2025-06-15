@@ -6,12 +6,13 @@ import { Text, Card, Title, Button, Paragraph } from "react-native-paper";
 import type { RootState } from "../../redux/store";
 import { theme } from "../../theme";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 
 // Helper para íconos y colores por tipo
 const typeMeta = {
   hospital: { icon: 'hospital-building', color: '#10B981' },
   clinic: { icon: 'medical-bag', color: '#3B82F6' },
-  pharmacy: { icon: 'pharmacy', color: '#F59E0B' },
+  pharmacy: { icon: 'pill', color: '#F59E0B' },
   laboratory: { icon: 'flask', color: '#8B5CF6' },
   dentist: { icon: 'tooth', color: '#EC4899' },
   default: { icon: 'map-marker', color: theme.colors.primary },
@@ -20,6 +21,25 @@ const typeMeta = {
 export default function HealthFacilityDetailScreen({ route }: any) {
   const { id } = route.params;
   const facility = useSelector((state: RootState) => state.healthFacilities.items.find(f => f._id === id));
+  const [userLocation, setUserLocation] = React.useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Permiso de ubicación denegado');
+          return;
+        }
+        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      } catch (e) {
+        setLocationError('No se pudo obtener la ubicación');
+      }
+    })();
+  }, []);
+
   if (!facility) return <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}><Text>No encontrado</Text></View>;
 
   const meta = (facility.type in typeMeta)
@@ -48,6 +68,17 @@ export default function HealthFacilityDetailScreen({ route }: any) {
     }
   };
 
+  const openGoogleMaps = () => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${facility.location.lat},${facility.location.lng}`;
+    Linking.openURL(url);
+  };
+
+  const openDirections = () => {
+    if (!userLocation) return;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${facility.location.lat},${facility.location.lng}&travelmode=driving`;
+    Linking.openURL(url);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Card style={[styles.card, { borderLeftWidth: 8, borderLeftColor: meta.color }]}> 
@@ -73,12 +104,16 @@ export default function HealthFacilityDetailScreen({ route }: any) {
           {facility.contact?.website && <Paragraph style={styles.sectionLabel}>Web: {facility.contact.website}</Paragraph>}
         </Card.Content>
         <Card.Actions style={styles.actions}>
-          <Button mode="contained" icon="map-marker" onPress={openMaps} style={styles.actionButton} contentStyle={styles.buttonContent}>Ver en mapa</Button>
-          {facility.contact?.phone && (
-            <Button mode="outlined" icon="phone" onPress={callPhone} style={styles.actionButton} contentStyle={styles.buttonContent}>Llamar</Button>
-          )}
-          {facility.contact?.phone && (
-            <Button mode="outlined" icon="whatsapp" onPress={openWhatsApp} style={styles.actionButton} contentStyle={styles.buttonContent}>WhatsApp</Button>
+          <View style={styles.rowButtons}>
+            <Button mode="contained" icon="google-maps" onPress={openGoogleMaps} style={styles.actionButton} contentStyle={styles.buttonContent}>Google Maps</Button>
+            <Button mode="contained" icon="navigation" onPress={openDirections} style={styles.actionButton} contentStyle={styles.buttonContent} disabled={!userLocation}>Cómo llegar</Button>
+          </View>
+          {(facility.contact?.phone) && (
+            <View style={styles.rowButtons}>
+              {facility.contact?.phone && (
+                <Button mode="outlined" icon="whatsapp" onPress={openWhatsApp} style={styles.actionButton} contentStyle={styles.buttonContent}>WhatsApp</Button>
+              )}
+            </View>
           )}
         </Card.Actions>
       </Card>
@@ -97,7 +132,8 @@ const styles = StyleSheet.create({
   city: { fontSize: 13, color: theme.colors.placeholder, marginBottom: 2 },
   address: { fontSize: 14, color: theme.colors.placeholder, marginBottom: 8 },
   sectionLabel: { fontWeight: 'bold', marginTop: 8 },
-  actions: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12, gap: 8 },
+  actions: { flexDirection: 'column', justifyContent: 'center', marginBottom: 16, gap: 12 },
+  rowButtons: { flexDirection: 'row', gap: 12, marginBottom: 0 },
   actionButton: { borderRadius: 8, marginHorizontal: 0, flex: 1, minWidth: 0 },
   buttonContent: { height: 44 },
 }); 
