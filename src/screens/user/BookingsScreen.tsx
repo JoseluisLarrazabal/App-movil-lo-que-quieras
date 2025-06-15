@@ -11,6 +11,10 @@ import { theme } from "../../theme"
 import { AuthContext } from "../../context/AuthContext"
 import { fetchUserBookings } from "../../redux/slices/bookingsSlice"
 
+type BookingWithMongoId = {
+  _id: string;
+} & any;
+
 export default function BookingsScreen() {
   const dispatch = useDispatch<AppDispatch>()
   const { currentUser } = useContext(AuthContext)
@@ -20,17 +24,13 @@ export default function BookingsScreen() {
 
   // Cargar reservas al montar
   useEffect(() => {
-    if (currentUser?.id) {
-      dispatch(fetchUserBookings(currentUser.id))
-    }
-  }, [dispatch, currentUser?.id])
+    dispatch(fetchUserBookings())
+  }, [dispatch])
 
   const onRefresh = useCallback(() => {
-    if (currentUser?.id) {
-      setRefreshing(true)
-      dispatch(fetchUserBookings(currentUser.id)).finally(() => setRefreshing(false))
-    }
-  }, [dispatch, currentUser?.id])
+    setRefreshing(true)
+    dispatch(fetchUserBookings()).finally(() => setRefreshing(false))
+  }, [dispatch])
 
   const filteredBookings = userBookings.filter((booking) => {
     if (selectedTab === "all") return true
@@ -71,10 +71,10 @@ export default function BookingsScreen() {
     <Card style={styles.bookingCard}>
       <Card.Content>
         <View style={styles.bookingHeader}>
-          <Avatar.Image size={50} source={{ uri: item.provider.avatar }} />
+          <Avatar.Image size={50} source={{ uri: item.provider?.avatar || 'https://ui-avatars.com/api/?name=Sin+Proveedor' }} />
           <View style={styles.bookingInfo}>
-            <Text style={styles.serviceTitle}>{item.service.title}</Text>
-            <Text style={styles.providerName}>{item.provider.name}</Text>
+            <Text style={styles.serviceTitle}>{item.service?.title || 'Sin servicio'}</Text>
+            <Text style={styles.providerName}>{item.provider?.name || 'Sin proveedor'}</Text>
             <Text style={styles.bookingDate}>
               {item.date} • {item.time}
             </Text>
@@ -148,8 +148,8 @@ export default function BookingsScreen() {
       )}
       {status !== "loading" && status !== "failed" && (
         <FlatList
-          data={filteredBookings}
-          keyExtractor={(item) => item.id}
+          data={filteredBookings as BookingWithMongoId[]}
+          keyExtractor={(item) => item._id}
           renderItem={renderBookingItem}
           contentContainerStyle={styles.bookingsList}
           showsVerticalScrollIndicator={false}

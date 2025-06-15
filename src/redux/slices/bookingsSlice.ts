@@ -36,13 +36,13 @@ interface BookingsState {
 // Thunk para obtener reservas del usuario
 export const fetchUserBookings = createAsyncThunk<
   Booking[],
-  string, // userId
+  void,
   { rejectValue: { message: string; data?: any } }
 >(
   "bookings/fetchUserBookings",
-  async (userId, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get(`/bookings/user/${userId}`)
+      const res = await api.get(`/bookings/my-bookings`)
       return res.data.bookings
     } catch (error: any) {
       return rejectWithValue({
