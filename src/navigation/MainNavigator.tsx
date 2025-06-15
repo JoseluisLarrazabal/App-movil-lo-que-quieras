@@ -33,6 +33,7 @@ import HealthFacilityDetailScreen from '../screens/health/HealthFacilityDetailSc
 import CommerceMapScreen from '../screens/commerce/CommerceMapScreen'
 import CommerceDetailScreen from '../screens/commerce/CommerceDetailScreen'
 import AddEditStoreScreen from '../screens/merchant/AddEditStoreScreen'
+import SelectLocationScreen from '../screens/shared/SelectLocationScreen'
 
 const Stack = createNativeStackNavigator()
 
@@ -62,6 +63,7 @@ export default function MainNavigator() {
         <>
           <Stack.Screen name="MerchantTabs" component={MerchantNavigator} />
           <Stack.Screen name="AddEditStore" component={AddEditStoreScreen} />
+          <Stack.Screen name="SelectLocation" component={SelectLocationScreen} />
         </>
       ) : currentUser.role === "provider" && !hasProfessionalProfile ? (
         // Obliga a crear perfil profesional antes de otra cosa
