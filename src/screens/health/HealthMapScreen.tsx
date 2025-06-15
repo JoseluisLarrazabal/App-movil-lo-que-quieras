@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { StyleSheet, View, FlatList, TextInput, Dimensions, TouchableOpacity } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Chip, ActivityIndicator, Card, Title } from "react-native-paper";
-import MapView, { Marker, PROVIDER_DEFAULT, UrlTile } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT, UrlTile, Region } from "react-native-maps";
 import { fetchHealthFacilities } from "../../redux/slices/healthFacilitiesSlice";
 import type { RootState, AppDispatch } from "../../redux/store";
 import { theme } from "../../theme";
@@ -37,44 +37,77 @@ export default function HealthMapScreen({ navigation }: any) {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
   const [locationLoading, setLocationLoading] = useState(true)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [mapRegion, setMapRegion] = useState<Region | null>(null)
   const mapRef = useRef<MapView>(null)
 
-  // Mover aquí la declaración de filteredFacilities
-  const filteredFacilities = facilities.filter(facility => {
-    const matchesType = !selectedType || facility.type === selectedType
-    const matchesSearch = !search || facility.name.toLowerCase().includes(search.toLowerCase())
-    return matchesType && matchesSearch
-  })
+  // Memoize filtered facilities
+  const filteredFacilities = useMemo(() => 
+    facilities.filter(facility => {
+      const matchesType = !selectedType || facility.type === selectedType
+      const matchesSearch = !search || facility.name.toLowerCase().includes(search.toLowerCase())
+      return matchesType && matchesSearch
+    }), [facilities, selectedType, search])
+
+  // Memoize initial region
+  const initialRegion = useMemo(() => 
+    userLocation
+      ? {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        }
+      : {
+          latitude: -17.3895,
+          longitude: -66.1568,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        }, [userLocation])
 
   useEffect(() => {
     dispatch(fetchHealthFacilities({ type: selectedType, search }))
   }, [dispatch, selectedType, search])
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
+      if (!isMounted) return;
       setLocationLoading(true)
       try {
         let { status } = await Location.requestForegroundPermissionsAsync()
         if (status !== 'granted') {
           setLocationError('Permiso de ubicación denegado')
-          setLocationLoading(false)
           return
         }
-        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low })
-        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+        let loc = await Location.getCurrentPositionAsync({ 
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 5000,
+          distanceInterval: 10
+        })
+        if (isMounted) {
+          setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+        }
       } catch (e) {
-        setLocationError('No se pudo obtener la ubicación')
+        if (isMounted) {
+          setLocationError('No se pudo obtener la ubicación')
+        }
       } finally {
-        setLocationLoading(false)
+        if (isMounted) {
+          setLocationLoading(false)
+        }
       }
     })()
+
+    return () => {
+      isMounted = false;
+    }
   }, [])
 
-  // Estado para mostrar el botón 'Ver todos' solo si hay más de 1 marker
-  const showFitButton = filteredFacilities.length > 1;
+  const handleRegionChange = useCallback((region: Region) => {
+    setMapRegion(region)
+  }, [])
 
-  // Handler para ajustar el mapa a todos los markers
-  const handleFitToMarkers = () => {
+  const handleFitToMarkers = useCallback(() => {
     if (filteredFacilities.length > 0 && mapRef.current) {
       mapRef.current.fitToCoordinates(
         filteredFacilities.map(f => ({
@@ -87,22 +120,32 @@ export default function HealthMapScreen({ navigation }: any) {
         }
       )
     }
-  }
+  }, [filteredFacilities])
 
-  // Centrar el mapa en Cochabamba o en la ubicación del usuario
-  const initialRegion = userLocation
-    ? {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        latitudeDelta: 0.08,
-        longitudeDelta: 0.08,
-      }
-    : {
-        latitude: -17.3895, // Cochabamba
-        longitude: -66.1568,
-        latitudeDelta: 0.08, // Zoom a nivel ciudad
-        longitudeDelta: 0.08,
-      }
+  const renderMarkers = useCallback(() => {
+    if (!mapRegion) return null;
+
+    return filteredFacilities
+      .filter(facility => {
+        // Solo renderizar marcadores visibles en la región actual
+        const isVisible = 
+          facility.location.lat >= mapRegion.latitude - mapRegion.latitudeDelta &&
+          facility.location.lat <= mapRegion.latitude + mapRegion.latitudeDelta &&
+          facility.location.lng >= mapRegion.longitude - mapRegion.longitudeDelta &&
+          facility.location.lng <= mapRegion.longitude + mapRegion.longitudeDelta;
+        
+        return isVisible;
+      })
+      .map(facility => (
+        <Marker
+          key={facility._id}
+          coordinate={{ latitude: facility.location.lat, longitude: facility.location.lng }}
+          title={facility.name}
+          description={facility.type}
+          onPress={() => navigation.navigate("HealthFacilityDetail", { id: facility._id })}
+        />
+      ));
+  }, [filteredFacilities, mapRegion, navigation]);
 
   // Calcular distancia en km entre dos puntos
   function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
@@ -150,6 +193,15 @@ export default function HealthMapScreen({ navigation }: any) {
       <View style={styles.mapContainer}>
         {(status === "loading" || locationLoading) ? (
           <ActivityIndicator style={{ marginTop: 40 }} size="large" />
+        ) : locationError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{locationError}</Text>
+            <Text style={styles.errorText}>Activa los permisos de ubicación para ver el mapa.</Text>
+          </View>
+        ) : !initialRegion || isNaN(initialRegion.latitude) || isNaN(initialRegion.longitude) ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>No se pudo determinar la ubicación inicial del mapa.</Text>
+          </View>
         ) : (
           <>
             <MapView
@@ -157,30 +209,38 @@ export default function HealthMapScreen({ navigation }: any) {
               style={styles.map}
               provider={PROVIDER_DEFAULT}
               initialRegion={initialRegion}
-              region={initialRegion}
+              onRegionChangeComplete={handleRegionChange}
               mapType="none"
               showsUserLocation={!!userLocation}
               showsMyLocationButton={true}
               minZoomLevel={2}
               maxZoomLevel={18}
+              moveOnMarkerPress={false}
+              loadingEnabled={true}
+              loadingIndicatorColor={theme.colors.primary}
+              loadingBackgroundColor={theme.colors.background}
+              removeClippedSubviews={true}
+              zoomEnabled={true}
+              rotateEnabled={true}
+              scrollEnabled={true}
+              pitchEnabled={true}
+              toolbarEnabled={true}
+              showsCompass={true}
+              showsScale={true}
+              showsTraffic={false}
+              showsBuildings={false}
+              showsIndoors={false}
+              showsPointsOfInterest={false}
             >
-              {/* OpenStreetMap tiles */}
               <UrlTile
                 urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                 maximumZ={19}
                 flipY={false}
+                zIndex={-1}
               />
-              {filteredFacilities.map(facility => (
-                <Marker
-                  key={facility._id}
-                  coordinate={{ latitude: facility.location.lat, longitude: facility.location.lng }}
-                  title={facility.name}
-                  description={facility.type}
-                  onPress={() => navigation.navigate("HealthFacilityDetail", { id: facility._id })}
-                />
-              ))}
+              {renderMarkers()}
             </MapView>
-            {showFitButton && (
+            {filteredFacilities.length > 1 && (
               <TouchableOpacity style={styles.fitButton} onPress={handleFitToMarkers}>
                 <MaterialCommunityIcons name="map-search" size={28} color="white" />
               </TouchableOpacity>
@@ -201,7 +261,6 @@ export default function HealthMapScreen({ navigation }: any) {
             if (userLocation) {
               distance = getDistanceKm(userLocation.latitude, userLocation.longitude, item.location.lat, item.location.lng)
             }
-            // Type guard para íconos por tipo
             const meta = (item.type in typeMeta)
               ? typeMeta[item.type as keyof typeof typeMeta]
               : typeMeta.default;
@@ -228,6 +287,12 @@ export default function HealthMapScreen({ navigation }: any) {
           }}
           style={styles.list}
           contentContainerStyle={{ paddingBottom: 120 }}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          initialNumToRender={5}
+          updateCellsBatchingPeriod={50}
+          onEndReachedThreshold={0.5}
         />
       )}
     </SafeAreaView>
@@ -271,5 +336,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: theme.colors.background,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 8,
   },
 }) 

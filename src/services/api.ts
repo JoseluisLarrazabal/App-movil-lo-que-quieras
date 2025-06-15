@@ -7,7 +7,7 @@ const LOCAL_IP = "192.168.0.7" // 👈 PON TU IP AQUÍ
 // Configuración para desarrollo
 const BASE_URL = __DEV__ 
   ? `http://${LOCAL_IP}:3000/api`  // Para Expo Go
-  : "https://tu-api-produccion.com/api"  // Para producción
+  : "https://app-movil-lo-que-quieras-2.onrender.com/api"  // Para producción
 
 // Create an Axios instance
 export const api = axios.create({

@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { StyleSheet, View, FlatList, TextInput, Dimensions, TouchableOpacity } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Chip, ActivityIndicator, Card, Title } from "react-native-paper";
-import MapView, { Marker, PROVIDER_DEFAULT, UrlTile } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT, UrlTile, Region } from "react-native-maps";
 import { getLocalStores } from "../../redux/slices/localStoresSlice";
 import type { RootState, AppDispatch } from "../../redux/store";
 import { theme } from "../../theme";
@@ -44,71 +44,103 @@ interface LocalStore {
   description?: string;
 }
 
+// Función auxiliar para calcular distancia
+const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; // Radio de la tierra en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
 export default function CommerceMapScreen({ navigation }: any) {
   const dispatch: AppDispatch = useDispatch()
-  // 2. Tipar los items correctamente
-  const { items: stores, status, error } = useSelector((state: RootState) => state.localStores) as { items: LocalStore[]; status: string; error?: string };
+  const { items: stores, status } = useSelector((state: RootState) => state.localStores)
   const [selectedType, setSelectedType] = useState("")
   const [search, setSearch] = useState("")
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
   const [locationLoading, setLocationLoading] = useState(true)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [mapRegion, setMapRegion] = useState<Region | null>(null)
   const mapRef = useRef<MapView>(null)
+
+  // Memoize filtered stores
+  const filteredStores = useMemo(() => 
+    stores.filter(store => {
+      const matchesType = !selectedType || store.type === selectedType
+      const matchesSearch = !search || store.name.toLowerCase().includes(search.toLowerCase())
+      return matchesType && matchesSearch
+    }), [stores, selectedType, search])
+
+  // Memoize initial region
+  const initialRegion = useMemo(() => 
+    userLocation
+      ? {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        }
+      : {
+          latitude: -17.3895,
+          longitude: -66.1568,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        }, [userLocation])
 
   useEffect(() => {
     dispatch(getLocalStores({ type: selectedType, search }))
   }, [dispatch, selectedType, search])
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
+      if (!isMounted) return;
       setLocationLoading(true)
       try {
         let { status } = await Location.requestForegroundPermissionsAsync()
         if (status !== 'granted') {
           setLocationError('Permiso de ubicación denegado')
-          setLocationLoading(false)
           return
         }
-        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low })
-        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+        let loc = await Location.getCurrentPositionAsync({ 
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 5000,
+          distanceInterval: 10
+        })
+        if (isMounted) {
+          setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+        }
       } catch (e) {
-        setLocationError('No se pudo obtener la ubicación')
+        if (isMounted) {
+          setLocationError('No se pudo obtener la ubicación')
+        }
       } finally {
-        setLocationLoading(false)
+        if (isMounted) {
+          setLocationLoading(false)
+        }
       }
     })()
+
+    return () => {
+      isMounted = false;
+    }
   }, [])
 
-  // 3. Validar datos antes de renderizar marcadores
-  const filteredStores = stores.filter(store => {
-    if (!store || !store.location || typeof store.location.lat !== 'number' || typeof store.location.lng !== 'number') return false;
-    const matchesType = !selectedType || store.type === selectedType
-    const matchesSearch = !search || store.name.toLowerCase().includes(search.toLowerCase())
-    return matchesType && matchesSearch
-  })
+  const handleRegionChange = useCallback((region: Region) => {
+    setMapRegion(region)
+  }, [])
 
-  // 4. Validar initialRegion para evitar NaN
-  const initialRegion = (userLocation && !isNaN(userLocation.latitude) && !isNaN(userLocation.longitude))
-    ? {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        latitudeDelta: 0.08,
-        longitudeDelta: 0.08,
-      }
-    : {
-        latitude: -17.3895, // Cochabamba
-        longitude: -66.1568,
-        latitudeDelta: 0.08,
-        longitudeDelta: 0.08,
-      }
-
-  const showFitButton = filteredStores.length > 1;
-  const handleFitToMarkers = () => {
+  const handleFitToMarkers = useCallback(() => {
     if (filteredStores.length > 0 && mapRef.current) {
       mapRef.current.fitToCoordinates(
-        filteredStores.map(f => ({
-          latitude: f.location.lat,
-          longitude: f.location.lng,
+        filteredStores.map(s => ({
+          latitude: s.location.lat,
+          longitude: s.location.lng,
         })),
         {
           edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
@@ -116,13 +148,38 @@ export default function CommerceMapScreen({ navigation }: any) {
         }
       )
     }
-  }
+  }, [filteredStores])
+
+  const renderMarkers = useCallback(() => {
+    if (!mapRegion) return null;
+
+    return filteredStores
+      .filter(store => {
+        // Solo renderizar marcadores visibles en la región actual
+        const isVisible = 
+          store.location.lat >= mapRegion.latitude - mapRegion.latitudeDelta &&
+          store.location.lat <= mapRegion.latitude + mapRegion.latitudeDelta &&
+          store.location.lng >= mapRegion.longitude - mapRegion.longitudeDelta &&
+          store.location.lng <= mapRegion.longitude + mapRegion.longitudeDelta;
+        
+        return isVisible;
+      })
+      .map(store => (
+        <Marker
+          key={store._id}
+          coordinate={{ latitude: store.location.lat, longitude: store.location.lng }}
+          title={store.name}
+          description={store.type}
+          onPress={() => navigation.navigate("LocalStoreDetail", { id: store._id })}
+        />
+      ));
+  }, [filteredStores, mapRegion, navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Title style={styles.title}>Mapa de Comercios</Title>
-        <Text style={styles.subtitle}>Encuentra tiendas de barrio y supermercados</Text>
+        <Text style={styles.subtitle}>Encuentra supermercados y tiendas locales</Text>
       </View>
       <View style={styles.filtersRow}>
         <FlatList
@@ -150,10 +207,15 @@ export default function CommerceMapScreen({ navigation }: any) {
       <View style={styles.mapContainer}>
         {(status === "loading" || locationLoading) ? (
           <ActivityIndicator style={{ marginTop: 40 }} size="large" />
-        ) : error ? (
-          <View style={styles.emptyContainer}><Text style={styles.emptyText}>Error: {error}</Text></View>
         ) : locationError ? (
-          <View style={styles.emptyContainer}><Text style={styles.emptyText}>{locationError}</Text></View>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{locationError}</Text>
+            <Text style={styles.errorText}>Activa los permisos de ubicación para ver el mapa.</Text>
+          </View>
+        ) : !initialRegion || isNaN(initialRegion.latitude) || isNaN(initialRegion.longitude) ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>No se pudo determinar la ubicación inicial del mapa.</Text>
+          </View>
         ) : (
           <>
             <MapView
@@ -161,38 +223,38 @@ export default function CommerceMapScreen({ navigation }: any) {
               style={styles.map}
               provider={PROVIDER_DEFAULT}
               initialRegion={initialRegion}
-              region={initialRegion}
+              onRegionChangeComplete={handleRegionChange}
               mapType="none"
               showsUserLocation={!!userLocation}
               showsMyLocationButton={true}
               minZoomLevel={2}
               maxZoomLevel={18}
+              moveOnMarkerPress={false}
+              loadingEnabled={true}
+              loadingIndicatorColor={theme.colors.primary}
+              loadingBackgroundColor={theme.colors.background}
+              removeClippedSubviews={true}
+              zoomEnabled={true}
+              rotateEnabled={true}
+              scrollEnabled={true}
+              pitchEnabled={true}
+              toolbarEnabled={true}
+              showsCompass={true}
+              showsScale={true}
+              showsTraffic={false}
+              showsBuildings={false}
+              showsIndoors={false}
+              showsPointsOfInterest={false}
             >
               <UrlTile
                 urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                 maximumZ={19}
                 flipY={false}
+                zIndex={-1}
               />
-              {filteredStores.map(store => {
-                // Validar datos antes de renderizar el marcador
-                if (!store.location || typeof store.location.lat !== 'number' || typeof store.location.lng !== 'number') return null;
-                const meta = (store.type in typeMeta)
-                  ? typeMeta[store.type as keyof typeof typeMeta]
-                  : typeMeta.default;
-                return (
-                  <Marker
-                    key={store._id}
-                    coordinate={{ latitude: store.location.lat, longitude: store.location.lng }}
-                    title={store.name}
-                    description={store.type}
-                    onPress={() => navigation.navigate("CommerceDetail", { id: store._id })}
-                  >
-                    <MaterialCommunityIcons name={meta.icon as any} size={32} color={meta.color} />
-                  </Marker>
-                )
-              })}
+              {renderMarkers()}
             </MapView>
-            {showFitButton && (
+            {filteredStores.length > 1 && (
               <TouchableOpacity style={styles.fitButton} onPress={handleFitToMarkers}>
                 <MaterialCommunityIcons name="map-search" size={28} color="white" />
               </TouchableOpacity>
@@ -200,7 +262,7 @@ export default function CommerceMapScreen({ navigation }: any) {
           </>
         )}
       </View>
-      {filteredStores.length === 0 && !locationLoading && !error && !locationError ? (
+      {filteredStores.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No se encontraron comercios</Text>
         </View>
@@ -209,21 +271,29 @@ export default function CommerceMapScreen({ navigation }: any) {
           data={filteredStores}
           keyExtractor={item => item._id}
           renderItem={({ item }) => {
-            if (!item) return null;
+            let distance = null
+            if (userLocation) {
+              distance = getDistanceKm(userLocation.latitude, userLocation.longitude, item.location.lat, item.location.lng)
+            }
             const meta = (item.type in typeMeta)
               ? typeMeta[item.type as keyof typeof typeMeta]
               : typeMeta.default;
+            const is24h = (item.openingHours || '').includes('24')
             return (
-              <Card style={styles.card} onPress={() => navigation.navigate("CommerceDetail", { id: item._id })}>
+              <Card style={styles.card} onPress={() => navigation.navigate("LocalStoreDetail", { id: item._id })}>
                 <Card.Content style={styles.cardContent}>
                   <View style={styles.iconCol}>
                     <MaterialCommunityIcons name={meta.icon as any} size={32} color={meta.color} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Title style={styles.cardTitle}>{item.name}</Title>
-                    <Text style={styles.cardType}>{item.type?.charAt(0).toUpperCase() + item.type?.slice(1)} • {item.city}</Text>
+                    <Text style={styles.cardType}>{item.type.charAt(0).toUpperCase() + item.type.slice(1)} • {item.city}</Text>
                     <Text style={styles.cardAddress}>{item.address}</Text>
                     <Text style={styles.cardHours}>{item.openingHours}</Text>
+                    {is24h && <Text style={styles.badge24h}>24h</Text>}
+                    {distance !== null && (
+                      <Text style={styles.distance}>{distance.toFixed(2)} km</Text>
+                    )}
                   </View>
                 </Card.Content>
               </Card>
@@ -231,6 +301,12 @@ export default function CommerceMapScreen({ navigation }: any) {
           }}
           style={styles.list}
           contentContainerStyle={{ paddingBottom: 120 }}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          initialNumToRender={5}
+          updateCellsBatchingPeriod={50}
+          onEndReachedThreshold={0.5}
         />
       )}
     </SafeAreaView>
@@ -272,5 +348,38 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+  },
+  badge24h: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: theme.colors.primary,
+    color: 'white',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  distance: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: theme.colors.background,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 8,
   },
 }) 
