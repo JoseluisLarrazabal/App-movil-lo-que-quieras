@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#7C3AED"
       },
-      "package": "com.loquequieras.app"
+      "package": "com.loquequieras.app",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
