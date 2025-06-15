@@ -90,7 +90,7 @@ export default function MainNavigator() {
           <Stack.Screen name="AddService" component={require('../screens/provider/AddServiceScreen').default} />
           <Stack.Screen name="HealthFacilityDetail" component={HealthFacilityDetailScreen} />
           <Stack.Screen name="CommerceMap" component={CommerceMapScreen} options={{ title: 'Comercios' }} />
-          <Stack.Screen name="CommerceDetail" component={CommerceDetailScreen} options={{ title: 'Detalle de Comercio' }} />
+          <Stack.Screen name="CommerceDetailScreen" component={CommerceDetailScreen} options={{ title: 'Detalle de Comercio' }} />
         </>
       )}
     </Stack.Navigator>

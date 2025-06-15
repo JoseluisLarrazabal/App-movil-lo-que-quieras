@@ -68,6 +68,7 @@ export default function CommerceMapScreen({ navigation }: any) {
   const [mapRegion, setMapRegion] = useState<Region | null>(null)
   const mapRef = useRef<MapView>(null)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [hasAnimatedToUser, setHasAnimatedToUser] = useState(false)
 
   // Memoize filtered stores
   const filteredStores = useMemo(() => 
@@ -97,15 +98,39 @@ export default function CommerceMapScreen({ navigation }: any) {
     dispatch(getLocalStores({ type: selectedType, search }))
   }, [dispatch, selectedType, search])
 
+  const retryLocation = async () => {
+    setLocationLoading(true)
+    setLocationError(null)
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        setLocationError('Permiso de ubicación denegado')
+        setLocationLoading(false)
+        return
+      }
+      let loc = await Location.getCurrentPositionAsync({ 
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 5000,
+        distanceInterval: 10
+      })
+      setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+      setHasAnimatedToUser(false)
+    } catch (e) {
+      setLocationError('No se pudo obtener la ubicación')
+    } finally {
+      setLocationLoading(false)
+    }
+  }
+
   useEffect(() => {
     let isMounted = true;
-    (async () => {
-      if (!isMounted) return;
-      setLocationLoading(true)
+    setLocationLoading(true)
+    setLocationError(null)
+    ;(async () => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync()
         if (status !== 'granted') {
-          setLocationError('Permiso de ubicación denegado')
+          if (isMounted) setLocationError('Permiso de ubicación denegado')
           return
         }
         let loc = await Location.getCurrentPositionAsync({ 
@@ -115,22 +140,28 @@ export default function CommerceMapScreen({ navigation }: any) {
         })
         if (isMounted) {
           setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+          setHasAnimatedToUser(false)
         }
       } catch (e) {
-        if (isMounted) {
-          setLocationError('No se pudo obtener la ubicación')
-        }
+        if (isMounted) setLocationError('No se pudo obtener la ubicación')
       } finally {
-        if (isMounted) {
-          setLocationLoading(false)
-        }
+        if (isMounted) setLocationLoading(false)
       }
     })()
-
-    return () => {
-      isMounted = false;
-    }
+    return () => { isMounted = false; }
   }, [])
+
+  useEffect(() => {
+    if (userLocation && mapRef.current && !hasAnimatedToUser) {
+      mapRef.current.animateToRegion({
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 0.08,
+        longitudeDelta: 0.08,
+      }, 800)
+      setHasAnimatedToUser(true)
+    }
+  }, [userLocation, hasAnimatedToUser])
 
   const handleRegionChange = useCallback((region: Region) => {
     setMapRegion(region)
@@ -171,7 +202,7 @@ export default function CommerceMapScreen({ navigation }: any) {
           coordinate={{ latitude: store.location.lat, longitude: store.location.lng }}
           title={store.name}
           description={store.type}
-          onPress={() => navigation.navigate("LocalStoreDetail", { id: store._id })}
+          onPress={() => navigation.navigate("CommerceDetailScreen", { id: store._id })}
         />
       ));
   }, [filteredStores, mapRegion, navigation]);
@@ -215,61 +246,60 @@ export default function CommerceMapScreen({ navigation }: any) {
         onChangeText={handleSearchChange}
       />
       <View style={styles.mapContainer}>
-        {(status === "loading" || locationLoading) ? (
-          <ActivityIndicator style={{ marginTop: 40 }} size="large" />
-        ) : locationError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{locationError}</Text>
-            <Text style={styles.errorText}>Activa los permisos de ubicación para ver el mapa.</Text>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          provider={PROVIDER_DEFAULT}
+          initialRegion={initialRegion}
+          onRegionChangeComplete={handleRegionChange}
+          mapType="none"
+          showsUserLocation={!!userLocation}
+          showsMyLocationButton={true}
+          minZoomLevel={2}
+          maxZoomLevel={18}
+          moveOnMarkerPress={false}
+          loadingEnabled={true}
+          loadingIndicatorColor={theme.colors.primary}
+          loadingBackgroundColor={theme.colors.background}
+          removeClippedSubviews={true}
+          zoomEnabled={true}
+          rotateEnabled={true}
+          scrollEnabled={true}
+          pitchEnabled={true}
+          toolbarEnabled={true}
+          showsCompass={true}
+          showsScale={true}
+          showsTraffic={false}
+          showsBuildings={false}
+          showsIndoors={false}
+          showsPointsOfInterest={false}
+        >
+          <UrlTile
+            urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maximumZ={19}
+            flipY={false}
+            zIndex={-1}
+          />
+          {renderMarkers()}
+        </MapView>
+        {locationLoading && (
+          <View style={styles.loaderOverlay} pointerEvents="none">
+            <ActivityIndicator size="large" color={theme.colors.primary} />
           </View>
-        ) : !initialRegion || isNaN(initialRegion.latitude) || isNaN(initialRegion.longitude) ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>No se pudo determinar la ubicación inicial del mapa.</Text>
+        )}
+        {locationError && !locationLoading && (
+          <View style={styles.locationError}>
+            <Text style={{ color: theme.colors.error, textAlign: 'center', marginBottom: 4 }}>{locationError}</Text>
+            <Text style={{ color: theme.colors.placeholder, textAlign: 'center', marginBottom: 8 }}>Puedes navegar el mapa manualmente.</Text>
+            <TouchableOpacity onPress={retryLocation} style={styles.retryButton}>
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Reintentar ubicación</Text>
+            </TouchableOpacity>
           </View>
-        ) : (
-          <>
-            <MapView
-              ref={mapRef}
-              style={styles.map}
-              provider={PROVIDER_DEFAULT}
-              initialRegion={initialRegion}
-              onRegionChangeComplete={handleRegionChange}
-              mapType="none"
-              showsUserLocation={!!userLocation}
-              showsMyLocationButton={true}
-              minZoomLevel={2}
-              maxZoomLevel={18}
-              moveOnMarkerPress={false}
-              loadingEnabled={true}
-              loadingIndicatorColor={theme.colors.primary}
-              loadingBackgroundColor={theme.colors.background}
-              removeClippedSubviews={true}
-              zoomEnabled={true}
-              rotateEnabled={true}
-              scrollEnabled={true}
-              pitchEnabled={true}
-              toolbarEnabled={true}
-              showsCompass={true}
-              showsScale={true}
-              showsTraffic={false}
-              showsBuildings={false}
-              showsIndoors={false}
-              showsPointsOfInterest={false}
-            >
-              <UrlTile
-                urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                maximumZ={19}
-                flipY={false}
-                zIndex={-1}
-              />
-              {renderMarkers()}
-            </MapView>
-            {filteredStores.length > 1 && (
-              <TouchableOpacity style={styles.fitButton} onPress={handleFitToMarkers}>
-                <MaterialCommunityIcons name="map-search" size={28} color="white" />
-              </TouchableOpacity>
-            )}
-          </>
+        )}
+        {filteredStores.length > 1 && (
+          <TouchableOpacity style={styles.fitButton} onPress={handleFitToMarkers}>
+            <MaterialCommunityIcons name="map-search" size={28} color="white" />
+          </TouchableOpacity>
         )}
       </View>
       {filteredStores.length === 0 ? (
@@ -290,7 +320,7 @@ export default function CommerceMapScreen({ navigation }: any) {
               : typeMeta.default;
             const is24h = (item.openingHours || '').includes('24')
             return (
-              <Card style={styles.card} onPress={() => navigation.navigate("LocalStoreDetail", { id: item._id })}>
+              <Card style={styles.card} onPress={() => navigation.navigate("CommerceDetailScreen", { id: item._id })}>
                 <Card.Content style={styles.cardContent}>
                   <View style={styles.iconCol}>
                     <MaterialCommunityIcons name={meta.icon as any} size={32} color={meta.color} />
@@ -379,17 +409,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  errorContainer: {
-    flex: 1,
+  loaderOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: theme.colors.background,
   },
-  errorText: {
-    color: theme.colors.error,
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 8,
+  locationError: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 8,
   },
 }) 
