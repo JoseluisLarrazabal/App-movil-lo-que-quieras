@@ -9,7 +9,7 @@ interface User {
   id: string
   name: string
   email: string
-  role: "user" | "provider" | "admin"
+  role: "user" | "provider" | "merchant" | "admin"
   avatar?: string
   phone?: string
   location?: string
@@ -17,11 +17,11 @@ interface User {
 
 interface AuthContextData {
   currentUser: User | null
-  userRole: "user" | "provider" | "admin" | null
+  userRole: "user" | "provider" | "merchant" | "admin" | null
   isLoading: boolean
   hasProfessionalProfile: boolean | null
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (name: string, email: string, password: string, role: "user" | "provider") => Promise<void>
+  signUp: (name: string, email: string, password: string, role: "user" | "provider" | "merchant") => Promise<void>
   signOut: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
   setHasProfessionalProfile: (hasProfile: boolean) => void
@@ -35,7 +35,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [userRole, setUserRole] = useState<"user" | "provider" | "admin" | null>(null)
+  const [userRole, setUserRole] = useState<"user" | "provider" | "merchant" | "admin" | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [hasProfessionalProfile, setHasProfessionalProfile] = useState<boolean | null>(null)
 
@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
-  const signUp = async (name: string, email: string, password: string, role: "user" | "provider") => {
+  const signUp = async (name: string, email: string, password: string, role: "user" | "provider" | "merchant") => {
     try {
       setIsLoading(true)
 

@@ -7,7 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Registro de usuario
+// Registro de usuario (user, provider o merchant)
 router.post('/register', async (req, res) => {
   try {
     // Validar datos de entrada

@@ -76,4 +76,26 @@ export async function fetchLocalStoreById(id: string) {
   return await res.json();
 }
 
+// Comercios propios del merchant
+export async function getMyLocalStores(): Promise<any> {
+  console.log('Llamando endpoint /local-stores/my-local-stores desde frontend');
+  const res = await api.get('/local-stores/my-local-stores');
+  return res.data;
+}
+
+export async function createLocalStore(data: Record<string, any>): Promise<any> {
+  const res = await api.post('/local-stores', data);
+  return res.data;
+}
+
+export async function updateLocalStore(id: string, data: Record<string, any>): Promise<any> {
+  const res = await api.put(`/local-stores/${id}`, data);
+  return res.data;
+}
+
+export async function deleteLocalStore(id: string): Promise<any> {
+  const res = await api.delete(`/local-stores/${id}`);
+  return res.data;
+}
+
 export default api

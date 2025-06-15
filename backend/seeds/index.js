@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const HealthFacility = require('../models/HealthFacility');
 const Professional = require('../models/Professionals');
 const { seedLocalStores } = require('./localStores');
+const LocalStore = require('../models/LocalStore');
 require('dotenv').config();
 
 // NUEVO: Seed de usuarios providers
@@ -25,6 +26,26 @@ const providerUsers = [
     password: bcrypt.hashSync('test1234', 10),
     role: 'provider',
     avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    isActive: true
+  }
+];
+
+// NUEVO: Seed de usuarios merchants
+const merchantUsers = [
+  {
+    name: 'Comerciante Uno',
+    email: 'merchant1@test.com',
+    password: bcrypt.hashSync('test1234', 10),
+    role: 'merchant',
+    avatar: 'https://randomuser.me/api/portraits/men/50.jpg',
+    isActive: true
+  },
+  {
+    name: 'Comerciante Dos',
+    email: 'merchant2@test.com',
+    password: bcrypt.hashSync('test1234', 10),
+    role: 'merchant',
+    avatar: 'https://randomuser.me/api/portraits/women/51.jpg',
     isActive: true
   }
 ];
@@ -259,6 +280,32 @@ const professionalSeeds = async (providers) => {
   console.log(`✅ ${createdProfessionals.length} perfiles profesionales creados exitosamente`);
 };
 
+// NUEVO: Seed de comercios para merchants
+const localStoresForMerchants = (merchants) => [
+  {
+    name: 'Supermercado Central',
+    type: 'supermercado',
+    address: 'Av. Principal 123',
+    city: 'Cochabamba',
+    location: { lat: -17.389, lng: -66.157 },
+    contact: { phone: '4441111', whatsapp: '4441111' },
+    openingHours: '8:00-22:00',
+    services: ['Alimentos', 'Bebidas'],
+    owner: merchants[0]._id
+  },
+  {
+    name: 'Tienda de Barrio La Paz',
+    type: 'barrio',
+    address: 'C. Comercio 456',
+    city: 'La Paz',
+    location: { lat: -16.5, lng: -68.13 },
+    contact: { phone: '2222222' },
+    openingHours: '7:00-21:00',
+    services: ['Despensa', 'Lácteos'],
+    owner: merchants[1]._id
+  }
+];
+
 const seedData = async () => {
   try {
     console.log('🚀 Iniciando proceso de seeding...');
@@ -291,6 +338,16 @@ const seedData = async () => {
     await seedLocalStores();
     console.log('✅ Comercios locales y supermercados sembrados exitosamente');
 
+    // Sembrar merchants
+    await User.deleteMany({ role: 'merchant' });
+    const createdMerchants = await User.insertMany(merchantUsers);
+    console.log(`✅ ${createdMerchants.length} comerciantes creados exitosamente`);
+
+    // Sembrar comercios de merchants
+    await LocalStore.deleteMany({ owner: { $in: createdMerchants.map(m => m._id) } });
+    await LocalStore.insertMany(localStoresForMerchants(createdMerchants));
+    console.log('✅ Comercios de merchants sembrados exitosamente');
+
     console.log('🎉 Proceso de seeding completado exitosamente');
   } catch (error) {
     console.error('❌ Error en el proceso de seeding:', error);
@@ -305,4 +362,26 @@ if (require.main === module) {
   seedData();
 }
 
-module.exports = { seedData };     
+module.exports = { seedData };
+
+async function fixOwners() {
+  await mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+
+  const stores = await LocalStore.find({ owner: { $type: "string" } });
+  for (const store of stores) {
+    store.owner = mongoose.Types.ObjectId(store.owner);
+    await store.save();
+    console.log(`Corregido owner para comercio: ${store.name}`);
+  }
+
+  await mongoose.disconnect();
+  console.log('✔️ Corrección de owners completada');
+}
+
+// Ejecutar si se llama directamente
+if (require.main === module) {
+  fixOwners();
+}     

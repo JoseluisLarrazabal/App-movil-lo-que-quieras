@@ -17,6 +17,7 @@ import CreateProfessionalProfileScreen from "../screens/professional/CreateProfe
 import UserNavigator from "./UserNavigator"
 import ProviderNavigator from "./ProviderNavigator"
 import AdminNavigator from "./AdminNavigator"
+import MerchantNavigator from './MerchantNavigator'
 
 // Additional Screens
 import ServiceDetailScreen from "../screens/shared/ServiceDetailScreen"
@@ -31,6 +32,7 @@ import PublicProviderProfileScreen from "../screens/user/PublicProviderProfileSc
 import HealthFacilityDetailScreen from '../screens/health/HealthFacilityDetailScreen'
 import CommerceMapScreen from '../screens/commerce/CommerceMapScreen'
 import CommerceDetailScreen from '../screens/commerce/CommerceDetailScreen'
+import AddEditStoreScreen from '../screens/merchant/AddEditStoreScreen'
 
 const Stack = createNativeStackNavigator()
 
@@ -56,6 +58,11 @@ export default function MainNavigator() {
         </>
       ) : currentUser.role === "admin" ? (
         <Stack.Screen name="AdminTabs" component={AdminNavigator} />
+      ) : currentUser.role === "merchant" ? (
+        <>
+          <Stack.Screen name="MerchantTabs" component={MerchantNavigator} />
+          <Stack.Screen name="AddEditStore" component={AddEditStoreScreen} />
+        </>
       ) : currentUser.role === "provider" && !hasProfessionalProfile ? (
         // Obliga a crear perfil profesional antes de otra cosa
         <Stack.Screen name="CreateProfessionalProfile" component={CreateProfessionalProfileScreen} />

@@ -16,7 +16,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [role, setRole] = useState<"user" | "provider">("user")
+  const [role, setRole] = useState<"user" | "provider" | "merchant">("user")
   const [isLoading, setIsLoading] = useState(false)
   const [secureTextEntry, setSecureTextEntry] = useState(true)
   const [secureConfirmEntry, setSecureConfirmEntry] = useState(true)
@@ -40,7 +40,7 @@ export default function RegisterScreen() {
     setIsLoading(true)
 
     try {
-      await signUp(name, email, password, role)
+      await signUp(name, email, password, role as "user" | "provider" | "merchant")
       // No navegamos manualmente, dejamos que MainNavigator maneje la redirección
     } catch (err: any) {
       Alert.alert("Error", err.message || "Error al crear la cuenta")
@@ -113,7 +113,7 @@ export default function RegisterScreen() {
 
             <View style={styles.roleContainer}>
               <Text style={styles.roleTitle}>Tipo de cuenta:</Text>
-              <RadioButton.Group onValueChange={(value) => setRole(value as "user" | "provider")} value={role}>
+              <RadioButton.Group onValueChange={(value) => setRole(value as "user" | "provider" | "merchant")} value={role}>
                 <View style={styles.radioOption}>
                   <RadioButton value="user" />
                   <Text style={styles.radioLabel}>Usuario - Buscar servicios</Text>
@@ -121,6 +121,10 @@ export default function RegisterScreen() {
                 <View style={styles.radioOption}>
                   <RadioButton value="provider" />
                   <Text style={styles.radioLabel}>Proveedor - Ofrecer servicios</Text>
+                </View>
+                <View style={styles.radioOption}>
+                  <RadioButton value="merchant" />
+                  <Text style={styles.radioLabel}>Comerciante - Gestionar comercios</Text>
                 </View>
               </RadioButton.Group>
             </View>

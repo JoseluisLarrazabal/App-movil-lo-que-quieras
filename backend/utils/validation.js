@@ -29,10 +29,10 @@ const registerSchema = Joi.object({
     }),
   
   role: Joi.string()
-    .valid('user', 'provider')
+    .valid('user', 'provider', 'merchant')
     .default('user')
     .messages({
-      'any.only': 'El rol debe ser user o provider'
+      'any.only': 'El rol debe ser user, provider o merchant'
     })
 });
 

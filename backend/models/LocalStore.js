@@ -19,7 +19,12 @@ const localStoreSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   featured: { type: Boolean, default: false },
   images: [String],
-  description: String
+  description: String,
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('LocalStore', localStoreSchema); 
