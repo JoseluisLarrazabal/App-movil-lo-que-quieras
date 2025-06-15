@@ -67,6 +67,7 @@ export default function CommerceMapScreen({ navigation }: any) {
   const [locationError, setLocationError] = useState<string | null>(null)
   const [mapRegion, setMapRegion] = useState<Region | null>(null)
   const mapRef = useRef<MapView>(null)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Memoize filtered stores
   const filteredStores = useMemo(() => 
@@ -175,6 +176,15 @@ export default function CommerceMapScreen({ navigation }: any) {
       ));
   }, [filteredStores, mapRegion, navigation]);
 
+  // Debounce para el input de búsqueda
+  const handleSearchChange = (text: string) => {
+    setSearch(text)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    searchTimeout.current = setTimeout(() => {
+      dispatch(getLocalStores({ type: selectedType, search: text }))
+    }, 400)
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -202,7 +212,7 @@ export default function CommerceMapScreen({ navigation }: any) {
         style={styles.searchInput}
         placeholder="Buscar comercio..."
         value={search}
-        onChangeText={setSearch}
+        onChangeText={handleSearchChange}
       />
       <View style={styles.mapContainer}>
         {(status === "loading" || locationLoading) ? (

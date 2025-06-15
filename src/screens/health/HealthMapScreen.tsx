@@ -39,6 +39,7 @@ export default function HealthMapScreen({ navigation }: any) {
   const [locationError, setLocationError] = useState<string | null>(null)
   const [mapRegion, setMapRegion] = useState<Region | null>(null)
   const mapRef = useRef<MapView>(null)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Memoize filtered facilities
   const filteredFacilities = useMemo(() => 
@@ -161,6 +162,15 @@ export default function HealthMapScreen({ navigation }: any) {
     return R * c
   }
 
+  // Debounce para el input de búsqueda
+  const handleSearchChange = (text: string) => {
+    setSearch(text)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    searchTimeout.current = setTimeout(() => {
+      dispatch(fetchHealthFacilities({ type: selectedType, search: text }))
+    }, 400)
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -188,7 +198,7 @@ export default function HealthMapScreen({ navigation }: any) {
         style={styles.searchInput}
         placeholder="Buscar establecimiento..."
         value={search}
-        onChangeText={setSearch}
+        onChangeText={handleSearchChange}
       />
       <View style={styles.mapContainer}>
         {(status === "loading" || locationLoading) ? (
