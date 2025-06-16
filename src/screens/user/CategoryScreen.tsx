@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { StyleSheet, View, FlatList } from "react-native"
-import { useSelector } from "react-redux"
+import { StyleSheet, View, FlatList, ActivityIndicator } from "react-native"
+import { useDispatch } from "react-redux"
 import { useRoute, useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { Text, Searchbar, SegmentedButtons, Appbar } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context"
-import type { RootState } from "../../redux/store"
+import type { AppDispatch } from "../../redux/store"
 import type { Service } from "../../redux/slices/servicesSlice"
 import { theme } from "../../theme"
 import ServiceCard from "../../components/ServiceCard"
+import { fetchServicesByCategory } from "../../redux/slices/servicesSlice"
 
 type RootStackParamList = {
   // otras screens ...
@@ -22,43 +23,46 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ServiceDeta
 export default function CategoryScreen() {
   const route = useRoute()
   const navigation = useNavigation<NavigationProp>()
+  const dispatch = useDispatch<AppDispatch>()
   const { categoryId, categoryName } = route.params as { categoryId: string; categoryName: string }
-  const { items: services } = useSelector((state: RootState) => state.services)
 
+  const [categoryServices, setCategoryServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("popular")
-  const [filteredServices, setFilteredServices] = useState<Service[]>(services);
 
   useEffect(() => {
-    let filtered = services.filter((service) => service.category.id === categoryId)
+    setLoading(true)
+    setError(null)
+    dispatch(fetchServicesByCategory({ categoryId }))
+      .unwrap()
+      .then(setCategoryServices)
+      .catch((err) => setError(err?.message || "Error al cargar servicios"))
+      .finally(() => setLoading(false))
+  }, [dispatch, categoryId])
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (service) =>
-          service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          service.description.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredServices = categoryServices
+    .filter((service) => {
+      if (!searchQuery) return true
+      return (
+        service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    }
-
-    // Sort services
-    switch (sortBy) {
-      case "price-low":
-        filtered.sort((a, b) => a.price - b.price)
-        break
-      case "price-high":
-        filtered.sort((a, b) => b.price - a.price)
-        break
-      case "rating":
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-      case "popular":
-      default:
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-    }
-
-    setFilteredServices(filtered)
-  }, [categoryId, services, searchQuery, sortBy])
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return a.price - b.price
+        case "price-high":
+          return b.price - a.price
+        case "rating":
+          return b.rating - a.rating
+        case "popular":
+        default:
+          return b.rating - a.rating
+      }
+    })
 
   const navigateToServiceDetail = (serviceId: string) => {
     navigation.navigate("ServiceDetail", { serviceId })
@@ -102,26 +106,34 @@ export default function CategoryScreen() {
       </View>
 
       <View style={styles.resultsContainer}>
-        <Text style={styles.resultsText}>{filteredServices.length} servicios encontrados</Text>
+        {loading ? (
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        ) : error ? (
+          <Text style={styles.emptyText}>{error}</Text>
+        ) : (
+          <Text style={styles.resultsText}>{filteredServices.length} servicios encontrados</Text>
+        )}
       </View>
 
-      <FlatList
-        data={filteredServices}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View key={item.id} style={styles.serviceItem}>
-            <ServiceCard service={item} onPress={() => navigateToServiceDetail(item.id)} />
-          </View>
-        )}
-        contentContainerStyle={styles.servicesList}
-        showsVerticalScrollIndicator={false}
-        numColumns={1}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No se encontraron servicios en esta categoría</Text>
-          </View>
-        }
-      />
+      {!loading && !error && (
+        <FlatList
+          data={filteredServices}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View key={item.id} style={styles.serviceItem}>
+              <ServiceCard service={item} onPress={() => navigateToServiceDetail(item.id)} />
+            </View>
+          )}
+          contentContainerStyle={styles.servicesList}
+          showsVerticalScrollIndicator={false}
+          numColumns={1}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No se encontraron servicios en esta categoría</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   )
 }

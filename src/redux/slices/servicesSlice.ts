@@ -439,21 +439,6 @@ const servicesSlice = createSlice({
       .addCase(adminRestoreService.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload?.message || "Error desconocido";
-      })
-      // Obtener servicios por categoría
-      .addCase(fetchServicesByCategory.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(fetchServicesByCategory.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.items = action.payload;
-        state.popularServices = action.payload.slice(0, 4);
-        state.error = null;
-      })
-      .addCase(fetchServicesByCategory.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload?.message || "Error desconocido";
       });
   },
 });
