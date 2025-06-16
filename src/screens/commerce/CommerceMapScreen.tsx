@@ -304,20 +304,6 @@ export default function CommerceMapScreen({ navigation }: any) {
     setIsMapReady(true);
   }, []);
 
-  const handleFitToMarkers = useCallback(() => {
-    if (filteredStores.length > 0 && mapRef.current && isMapReady) {
-      const coordinates = filteredStores.map(s => ({
-        latitude: s.location.lat,
-        longitude: s.location.lng,
-      }));
-      
-      mapRef.current.fitToCoordinates(coordinates, {
-        edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
-        animated: true,
-      });
-    }
-  }, [filteredStores, isMapReady]);
-
   const handleStorePress = useCallback((storeId: string) => {
     navigation.navigate("CommerceDetailScreen", { id: storeId });
   }, [navigation]);
@@ -441,12 +427,6 @@ export default function CommerceMapScreen({ navigation }: any) {
               <Text style={styles.retryButtonText}>Reintentar</Text>
             </TouchableOpacity>
           </View>
-        )}
-        
-        {filteredStores.length > 1 && (
-          <TouchableOpacity style={styles.fitButton} onPress={handleFitToMarkers}>
-            <MaterialCommunityIcons name="map-search" size={24} color="white" />
-          </TouchableOpacity>
         )}
       </View>
       
@@ -607,22 +587,6 @@ const styles = StyleSheet.create({
     color: theme.colors.placeholder,
     textAlign: 'center',
     opacity: 0.7
-  },
-  fitButton: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-    backgroundColor: theme.colors.primary,
-    borderRadius: 28,
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
   },
   badge24h: {
     position: 'absolute',

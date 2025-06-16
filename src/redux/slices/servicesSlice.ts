@@ -265,6 +265,60 @@ export const adminRestoreService = createAsyncThunk<
     }
 });
 
+// Thunk para obtener servicios por categoría
+export const fetchServicesByCategory = createAsyncThunk<
+  Service[],
+  { categoryId: string },
+  { rejectValue: { message: string; data?: any } }
+>(
+  "services/fetchServicesByCategory",
+  async ({ categoryId }, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/services?category=${categoryId}`);
+      return res.data.services.map((s: any) => ({
+        id: s._id,
+        title: s.title,
+        description: s.description,
+        price: s.price,
+        rating: s.rating || 0,
+        image:
+          s.images?.[0] ||
+          "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
+        images: s.images,
+        category: {
+          id: s.category?._id || s.category?.id || "",
+          name: s.category?.name || "",
+        },
+        provider: {
+          id: s.provider?._id || s.provider?.id || "",
+          name: s.provider?.name || "",
+          avatar:
+            s.provider?.avatar ||
+            "https://randomuser.me/api/portraits/men/32.jpg",
+          rating: s.provider?.rating || 0,
+        },
+        location: {
+          lat: s.location?.lat || 0,
+          lng: s.location?.lng || 0,
+          address: s.location?.address || "",
+        },
+        duration: s.duration,
+        features: s.features,
+        isActive: s.isActive,
+        adminDeleted: s.adminDeleted,
+        adminDeleteReason: s.adminDeleteReason,
+        adminDeletedAt: s.adminDeletedAt,
+        adminRestoredAt: s.adminRestoredAt,
+      }));
+    } catch (error: any) {
+      return rejectWithValue({
+        message: error.response?.data?.message || "Error al cargar servicios por categoría",
+        data: error.response?.data,
+      });
+    }
+  }
+);
+
 const initialState: ServicesState = {
   items: [],
   popularServices: [],
@@ -383,6 +437,21 @@ const servicesSlice = createSlice({
         state.error = null;
       })
       .addCase(adminRestoreService.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload?.message || "Error desconocido";
+      })
+      // Obtener servicios por categoría
+      .addCase(fetchServicesByCategory.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchServicesByCategory.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.items = action.payload;
+        state.popularServices = action.payload.slice(0, 4);
+        state.error = null;
+      })
+      .addCase(fetchServicesByCategory.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload?.message || "Error desconocido";
       });

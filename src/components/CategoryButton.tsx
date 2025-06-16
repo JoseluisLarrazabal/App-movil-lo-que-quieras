@@ -30,7 +30,6 @@ export default function CategoryButton({ category, onPress }: CategoryButtonProp
       <Text style={styles.name} numberOfLines={2}>
         {category.name}
       </Text>
-      <Text style={styles.count}>{category.serviceCount || 0} servicios</Text>
     </TouchableOpacity>
   )
 }
@@ -59,10 +58,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 4,
     lineHeight: 14,
-  },
-  count: {
-    fontSize: 10,
-    color: theme.colors.placeholder,
-    textAlign: "center",
   },
 })

@@ -2,7 +2,7 @@ import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from "ax
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 // ⚠️ CAMBIA ESTA IP POR LA TUYA
-const LOCAL_IP = "192.168.20.18" // 👈 PON TU IP AQUÍ
+const LOCAL_IP = "192.168.0.7" // 👈 PON TU IP AQUÍ
 
 // Configuración para desarrollo
 const BASE_URL = __DEV__ 
