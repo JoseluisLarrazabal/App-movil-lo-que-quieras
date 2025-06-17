@@ -1,22 +1,27 @@
+import React from "react"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from "@react-navigation/drawer"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { theme } from "../theme"
+import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 
 // User Screens
 import HomeScreen from "../screens/user/HomeScreen"
 import SearchScreen from "../screens/user/SearchScreen"
+import ProfileScreen from "../screens/user/ProfileScreen"
 import ProfessionalSearchScreen from "../screens/professional/ProfessionalSearchScreen"
 import BookingsScreen from "../screens/user/BookingsScreen"
-import ProfileScreen from "../screens/user/ProfileScreen"
 import HealthMapScreen from '../screens/health/HealthMapScreen'
 import CommerceMapScreen from '../screens/commerce/CommerceMapScreen'
+import { TouchableOpacity } from "react-native"
 
 const Tab = createBottomTabNavigator()
+const Drawer = createDrawerNavigator()
 
-export default function UserNavigator() {
+function MainTabs({ navigation }: any) {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.placeholder,
         tabBarStyle: {
@@ -30,8 +35,14 @@ export default function UserNavigator() {
           shadowOpacity: 0.1,
           shadowRadius: 8,
         },
-        headerShown: false,
-      }}
+        headerShown: true,
+        headerLeft: () => (
+          <TouchableOpacity style={{ marginLeft: 16 }} onPress={() => navigation.openDrawer()}>
+            <MaterialCommunityIcons name="menu" size={28} color={theme.colors.primary} />
+          </TouchableOpacity>
+        ),
+        headerTitleAlign: 'center',
+      })}
     >
       <Tab.Screen
         name="Home"
@@ -54,26 +65,6 @@ export default function UserNavigator() {
         }}
       />
       <Tab.Screen
-        name="Professionals"
-        component={ProfessionalSearchScreen}
-        options={{
-          tabBarLabel: "Profesionales",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="account-hard-hat" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Bookings"
-        component={BookingsScreen}
-        options={{
-          tabBarLabel: "Reservas",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="calendar" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
@@ -83,26 +74,74 @@ export default function UserNavigator() {
           ),
         }}
       />
-      <Tab.Screen
-        name="Health"
+    </Tab.Navigator>
+  )
+}
+
+export default function UserNavigator() {
+  return (
+    <Drawer.Navigator
+      screenOptions={{
+        drawerActiveTintColor: theme.colors.primary,
+        drawerInactiveTintColor: theme.colors.placeholder,
+        headerShown: false,
+      }}
+      drawerContent={(props: DrawerContentComponentProps) => (
+        <DrawerContentScrollView {...props}>
+          <DrawerItemList {...props} />
+        </DrawerContentScrollView>
+      )}
+    >
+      <Drawer.Screen
+        name="Principal"
+        component={MainTabs}
+        options={{
+          drawerLabel: "Inicio",
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Profesionales"
+        component={ProfessionalSearchScreen}
+        options={{
+          drawerLabel: "Profesionales",
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="account-hard-hat" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Reservas"
+        component={BookingsScreen}
+        options={{
+          drawerLabel: "Reservas",
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Salud"
         component={HealthMapScreen}
         options={{
-          tabBarLabel: "Salud",
-          tabBarIcon: ({ color, size }) => (
+          drawerLabel: "Salud",
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
             <MaterialCommunityIcons name="hospital-building" size={size} color={color} />
           ),
         }}
       />
-      <Tab.Screen
-        name="Commerce"
+      <Drawer.Screen
+        name="Comercios"
         component={CommerceMapScreen}
         options={{
-          tabBarLabel: "Comercios",
-          tabBarIcon: ({ color, size }) => (
+          drawerLabel: "Comercios",
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
             <MaterialCommunityIcons name="storefront" size={size} color={color} />
           ),
         }}
       />
-    </Tab.Navigator>
+    </Drawer.Navigator>
   )
 } 
